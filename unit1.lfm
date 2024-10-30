@@ -1,0 +1,31 @@
+object Form1: TForm1
+  Left = 488
+  Height = 551
+  Top = 95
+  Width = 1188
+  Caption = 'Form1'
+  ClientHeight = 551
+  ClientWidth = 1188
+  DesignTimePPI = 144
+  Font.Height = -18
+  OnCreate = FormCreate
+  object Panel2: TPanel
+    Left = 0
+    Height = 48
+    Top = 0
+    Width = 1860
+    BevelOuter = bvNone
+    Color = clWindow
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 0
+  end
+  object ActionList1: TActionList
+    Left = 552
+    Top = 264
+    object Action1: TAction
+      Caption = 'quit'
+      ShortCut = 32883
+    end
+  end
+end

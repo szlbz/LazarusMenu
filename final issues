@@ -1,0 +1,1285 @@
+procedure TAdvancedMainMenu.mainMenuItem_mouseEnter(Sender: TObject);
+var
+  i             : Integer;
+
+  currNode      : TNodePtr;
+  otherNode     : TNodePtr;
+  mustOpenCurr  : Boolean;
+
+  otherLabel    : TBCLabel;
+  mPanel        : TBCPanel;
+
+
+begin
+
+  //-------   Given the Sender (MainMenu TBCLabel) find the associated node ------// THIS APPLIES ONLY FOR THE MAIN MENU
+
+  mPanel        := locate_renderItemPanel_byName((Sender as TBCLabel).Name); //---// Locate the container panel from mainmenu panel array
+                                                                                  // The mainmenu panel array is global
+  currNode      := locate_menuNode_byName((Sender as TBCLabel).Name); //----------// Get the Node that contains the menu
+
+
+
+
+
+  //--------------------- Find the colors and other flags ------------------------//
+
+  //-------------------------- Highlight the colors ------------------------------//
+
+  (Sender as TBCLabel).Background.Color := clActiveCaption; //--------------------// Set the highlight color
+  (Sender as TBCLabel).Background.Style := bbsColor; //---------------------------// Otherwise color is not updated
+
+  //------------------------ Change sibling colors -------------------------------//
+
+  for i := 0 to ((Sender as TBCLabel).Parent.Parent as TPanel).ControlCount - 1 do
+  begin
+    otherLabel  := ((((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] as TBCPanel).Controls[0] as TBCLabel);  // Find allother labels in main menu
+                                                                                  // MainMenu is ALWAYS on a panel
+                                                                                  // (Sender as TBCLabel)   --> Event Sender (label)
+                                                                                  // (Sender as TBCLabel).Parent ---> first BCL Panel holding the bcl label
+                                                                                  // (Sender as TBCLabel).Parent.Parent ---> main menu container panel
+                                                                                  // ((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] ---> all other bcl panels
+                                                                                  // Each such panel ALWAYS contain a single label
+                                                                                  // (((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] as TBCPanel).Controls[0] --> that bcl label
+                                                                                  // ((((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] as TBCPanel).Controls[0] as TBCLabel)---> typecast
+    otherNode   := locate_menuNode_byName(otherLabel.Name); //--------------------// Get corresponding node...
+
+    writeln('checking : ' + otherNode^.name);
+
+
+
+
+    if otherNode = currNode then //-----------------------------------------------// If currently highlighted node, leave as is
+    begin
+      Continue;
+    end;
+
+    otherLabel.Background.Color := otherNode^.BGColorOriginal; //-----------------------// Since mouse entered a specific menu, turn off highligh color of all other menus
+    otherLabel.Background.Style := bbsColor;
+  end;
+
+  otherNode     := MenuTree.root; //----------------------------------------------// Placeholder for all other nodes that we will check
+                                                                                  // If any other node has a open submenu,
+                                                                                  // then on mouseentry to this menu, the open submenu will be closed
+                                                                                  // and the current main menu submenu will be opened up.
+                                                                                  // Start searching at the main meni route.
+
+  mustOpenCurr  := False; //------------------------------------------------------// Flag to find out whether has to open current menu submenu
+                                                                                  // On mouse entry or not
+  (*
+  while(true) do //---------------------------------------------------------------// Keep Scanning
+  begin
+
+
+
+
+    if (otherNode^.next = nil) then Break; //-------------------------------------// if no next item, then break
+    otherNode := otherNode^.next; //----------------------------------------------// Otherwise continue looping with the next
+
+  end;
+  *)
+
+  WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+
+  if (otherNode^.isSubMenuDrawn) then //------------------------------------------// If another one has a deployed submenu
+  begin
+    mustOpenCurr := True; //------------------------------------------------------// Then must open submenu of the current one
+
+
+    //---------    close ALL open panels, including submenu panesl       ---------// TBCPanel
+
+    WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+
+                                                                                  // But we will scan them all
+    otherNode^.isSubMenuDrawn := False; //----------------------------------------// Update the relevant flags.
+    (otherNode^.subMenuContainer as TBCPanel).Visible:=False; //------------------// Close open menu. Generally, only one will be open
+    WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+
+    WriteLn( 'found : ' + otherNode^.name+ ' --> ' + BoolToStr(otherNode^.isSubMenuDrawn));
+
+    WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+
+    while(true) do //-------------------------------------------------------------// Search whether any Child Menu is open
+    begin
+      if Length(otherNode^.Children)<> 0 then //----------------------------------// If has children
+      begin
+        WriteLn( 'picking child of : ' + otherNode^.name);
+        otherNode := otherNode^.Children[0]; //-----------------------------------// Pick the child
+        WriteLn( 'found : ' + otherNode^.name+ ' --> ' + BoolToStr(otherNode^.isSubMenuDrawn));
+        if otherNode^.isSubMenuDrawn then //--------------------------------------// Submenu container could be nil. but
+                                                                                  // If this flag is set,
+                                                                                  // then submenu container was created
+                                                                                  // And THUS Can't be nil
+        begin
+          (otherNode^.subMenuContainer as TBCPanel).Visible:=False; //------------// Force off
+          otherNode^.isSubMenuDrawn := False; //----------------------------------// Turn off flag
+          WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+        end;
+
+        writeln(' continue 1');
+        WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+        Continue; //--------------------------------------------------------------// Continue to see if any other level of submenu is open
+      end;
+
+      //--------------------------------------------------------------------------// IF AT THIS POINT, THEN THERE'S NO CHILD
+                                                                                  // BUT POSSIBLY, CONTROL IS AT A DEEPER SUBMENU LEVEL,
+                                                                                  // WHERE A NON-ZERO INDEX CHILD WAS OPENED.
+                                                                                  // HOWEVER, THE DFS ABOVE SO FAR LOOKED AT THE
+                                                                                  // CHILD MENU INDEX 0 ONLY. SO SCAN OTHER INDICES ALSO
+
+      if otherNode^.next <> Nil then  //------------------------------------------// If there's a 'next' item, take it
+      begin
+        WriteLn( 'Picking nxet of : ' + otherNode^.name);
+        otherNode := otherNode^.next;
+        if otherNode^.isSubMenuDrawn then //--------------------------------------// again, if the flag is set = menu container is created
+        begin
+          (otherNode^.subMenuContainer as TBCPanel).Visible:=False; //------------// Turn off
+          otherNode^.isSubMenuDrawn := False;
+          WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+        end;
+
+        Continue;
+      end;
+
+      //--------------------------------------------------------------------------// IF AT THIS POINT, THE DFS HAS LOOKED AT A LEVEL
+                                                                                  // WITHOUT A CHILD OR A NEXT
+                                                                                  // BUT MAY BE DFS FOLLOWED THE WRONG BRACH UNTIL NOW
+                                                                                  // SO GO ONE STEP BACK  AND TRY TO FIND THE NEXT BRANCH
+
+      if otherNode^.Parent <> Nil then //-----------------------------------------// If possible
+      begin
+        WriteLn( 'picking parent of : ' + otherNode^.name);
+        otherNode := otherNode^.Parent; //----------------------------------------// Go one step back
+        if otherNode^.next <> Nil then  //----------------------------------------// If possible
+        begin
+          WriteLn( 'picking sibling (after parent) of : ' + otherNode^.name);
+          otherNode := otherNode^.next; //----------------------------------------// Take next item
+          WriteLn( 'settled on : ' + otherNode^.name + ' --->' + BoolToStr(otherNode^.isSubMenuDrawn));
+          if otherNode^.isSubMenuDrawn then
+          begin
+            (otherNode^.subMenuContainer as TBCPanel).Visible:=False;
+            otherNode^.isSubMenuDrawn := False;
+            WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+          end;
+
+          Continue;
+        end;
+      end;
+
+      Break; //-------------------------------------------------------------------// If nothing is possible, then break.
+    end;
+
+  end;
+
+
+
+  //-------------------- if flag is set, open it ---------------------------------//
+
+  if (mustOpenCurr) then //-------------------------------------------------------// If need to open the current menu
+  begin
+    if (currNode^.subMenuContainer <> nil) then //--------------------------------// If there is a submenu in the first place
+    begin
+      ( currNode^.subMenuContainer as TBCPanel).Parent  := (Sender as TBCLabel).Parent.Parent.Parent; // reparent
+      (currNode^.subMenuContainer as TBCPanel).Visible:=True; //------------------// Show
+      currNode^.isSubMenuDrawn:= True; //-----------------------------------------// Update flags
+
+    end;
+  end;
+
+
+
+end;
+
+
+//------------------------ Change sibling colors -------------------------------//
+
+  for i := 0 to ((Sender as TBCLabel).Parent.Parent as TPanel).ControlCount - 1 do
+  begin
+    otherLabel  := ((((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] as TBCPanel).Controls[0] as TBCLabel);  // Find allother labels in main menu
+                                                                                  // MainMenu is ALWAYS on a panel
+                                                                                  // (Sender as TBCLabel)   --> Event Sender (label)
+                                                                                  // (Sender as TBCLabel).Parent ---> first BCL Panel holding the bcl label
+                                                                                  // (Sender as TBCLabel).Parent.Parent ---> main menu container panel
+                                                                                  // ((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] ---> all other bcl panels
+                                                                                  // Each such panel ALWAYS contain a single label
+                                                                                  // (((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] as TBCPanel).Controls[0] --> that bcl label
+                                                                                  // ((((Sender as TBCLabel).Parent.Parent as TPanel).Controls[i] as TBCPanel).Controls[0] as TBCLabel)---> typecast
+    otherNode   := locate_menuNode_byName(otherLabel.Name); //--------------------// Get corresponding node...
+
+    writeln('checking : ' + otherNode^.name);
+
+
+
+
+    if otherNode = currNode then //-----------------------------------------------// If currently highlighted node, leave as is
+    begin
+      Continue;
+    end;
+
+    otherLabel.Background.Color := otherNode^.BGColorOriginal; //-----------------------// Since mouse entered a specific menu, turn off highligh color of all other menus
+    otherLabel.Background.Style := bbsColor;
+  end;
+
+
+
+
+  WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+
+  if (otherNode^.isSubMenuDrawn) then //------------------------------------------// If another one has a deployed submenu
+  begin
+    mustOpenCurr := True; //------------------------------------------------------// Then must open submenu of the current one
+
+
+    //---------    close ALL open panels, including submenu panesl       ---------// TBCPanel
+
+    WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+
+                                                                                  // But we will scan them all
+    otherNode^.isSubMenuDrawn := False; //----------------------------------------// Update the relevant flags.
+    (otherNode^.subMenuContainer as TBCPanel).Visible:=False; //------------------// Close open menu. Generally, only one will be open
+    WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+
+    WriteLn( 'found : ' + otherNode^.name+ ' --> ' + BoolToStr(otherNode^.isSubMenuDrawn));
+
+    WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+
+    while(true) do //-------------------------------------------------------------// Search whether any Child Menu is open
+    begin
+      if Length(otherNode^.Children)<> 0 then //----------------------------------// If has children
+      begin
+        WriteLn( 'picking child of : ' + otherNode^.name);
+        otherNode := otherNode^.Children[0]; //-----------------------------------// Pick the child
+        WriteLn( 'found : ' + otherNode^.name+ ' --> ' + BoolToStr(otherNode^.isSubMenuDrawn));
+        if otherNode^.isSubMenuDrawn then //--------------------------------------// Submenu container could be nil. but
+                                                                                  // If this flag is set,
+                                                                                  // then submenu container was created
+                                                                                  // And THUS Can't be nil
+        begin
+          (otherNode^.subMenuContainer as TBCPanel).Visible:=False; //------------// Force off
+          otherNode^.isSubMenuDrawn := False; //----------------------------------// Turn off flag
+          WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+        end;
+
+        writeln(' continue 1');
+        WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+
+        Continue; //--------------------------------------------------------------// Continue to see if any other level of submenu is open
+      end;
+
+      //--------------------------------------------------------------------------// IF AT THIS POINT, THEN THERE'S NO CHILD
+                                                                                  // BUT POSSIBLY, CONTROL IS AT A DEEPER SUBMENU LEVEL,
+                                                                                  // WHERE A NON-ZERO INDEX CHILD WAS OPENED.
+                                                                                  // HOWEVER, THE DFS ABOVE SO FAR LOOKED AT THE
+                                                                                  // CHILD MENU INDEX 0 ONLY. SO SCAN OTHER INDICES ALSO
+
+      if otherNode^.next <> Nil then  //------------------------------------------// If there's a 'next' item, take it
+      begin
+        WriteLn( 'Picking nxet of : ' + otherNode^.name);
+        otherNode := otherNode^.next;
+        if otherNode^.isSubMenuDrawn then //--------------------------------------// again, if the flag is set = menu container is created
+        begin
+          (otherNode^.subMenuContainer as TBCPanel).Visible:=False; //------------// Turn off
+          otherNode^.isSubMenuDrawn := False;
+          WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+        end;
+
+        Continue;
+      end;
+
+      //--------------------------------------------------------------------------// IF AT THIS POINT, THE DFS HAS LOOKED AT A LEVEL
+                                                                                  // WITHOUT A CHILD OR A NEXT
+                                                                                  // BUT MAY BE DFS FOLLOWED THE WRONG BRACH UNTIL NOW
+                                                                                  // SO GO ONE STEP BACK  AND TRY TO FIND THE NEXT BRANCH
+
+      if otherNode^.Parent <> Nil then //-----------------------------------------// If possible
+      begin
+        WriteLn( 'picking parent of : ' + otherNode^.name);
+        otherNode := otherNode^.Parent; //----------------------------------------// Go one step back
+        if otherNode^.next <> Nil then  //----------------------------------------// If possible
+        begin
+          WriteLn( 'picking sibling (after parent) of : ' + otherNode^.name);
+          otherNode := otherNode^.next; //----------------------------------------// Take next item
+          WriteLn( 'settled on : ' + otherNode^.name + ' --->' + BoolToStr(otherNode^.isSubMenuDrawn));
+          if otherNode^.isSubMenuDrawn then
+          begin
+            (otherNode^.subMenuContainer as TBCPanel).Visible:=False;
+            otherNode^.isSubMenuDrawn := False;
+            WriteLn( 'Closing the submenu of : ' + otherNode^.name);
+          end;
+
+          Continue;
+        end;
+      end;
+
+      Break; //-------------------------------------------------------------------// If nothing is possible, then break.
+    end;
+
+  end;
+
+
+
+
+procedure TAdvancedMainMenu.mainMenuItem_mouseExit(Sender: TObject);
+var
+  mPanel        : TBCPanel;
+  currNode      : TNodePtr;
+begin
+
+
+  // ++++++++++++++++++++++++++    DO NOTHING    +++++++++++++++++++++++++++++++++
+
+
+end; //###########################################################################// End of Function
+
+procedure TAdvancedMainMenu.toggleSubMenu(Sender: TObject);
+var
+  currNode      : TNodePtr;
+  nm            : String;
+  i             : Integer;
+  padding       : Integer;
+  y             : Integer;
+  x             : Integer;
+
+  taregtPanel   : TBCPanel;
+
+begin
+
+  currNode      := locate_menuNode_byName((Sender as TBCLabel).Name); //----------// After clicking on a display label to render a menu
+                                                                                  // Get the corresponding node, using the name of the label
+                                                                                  // label used to display a menu always has the same name
+                                                                                  // as the menu node
+
+  if (currNode^.subMenuContainer <> nil) then //----------------------------------// If there IS a submenu container (the initial valu of which
+                                                                                  // is nil, to be overwritten in when a submenu is added)
+  begin
+    if ( ( currNode^.subMenuContainer as TBCPanel).Visible = false) then //-------// If not visible
+    begin
+      ( currNode^.subMenuContainer as TBCPanel).Parent  := (Sender as TBCLabel).Parent.Parent.Parent;  // REPARENT. doing it once is sufficient
+      ( currNode^.subMenuContainer as TBCPanel).Visible := True; //---------------// make it visible
+      currNode^.isSubMenuDrawn := True; //----------------------------------------// Set the flag
+
+      writeln('submenu is toggled for : ' +  currNode^.name);
+
+
+
+      for i := 0 to ( currNode^.subMenuContainer as TBCPanel).ControlCount - 1 do // Check if there is a divider line
+      begin
+
+        padding := 2;
+
+        if (( currNode^.subMenuContainer as TBCPanel).Controls[i].Width = 0) then // If width is zero, then a divider line.
+        begin
+
+          (currNode^.subMenuContainer as TBCPanel).Controls[i].Width:=( currNode^.subMenuContainer as TBCPanel).Width - 2*padding;
+                                                //--------------------------------// Outer container of all submenu items
+                                                                                  // has got the proper width
+                                                                                  // which is adjusted to the largest of submenu label
+                                                                                  // but the divider submenu items with original width
+                                                                                  // = 0 need to be adjusted to have uniform width
+
+
+          x     := ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Height;  // get the height
+          ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Height:= 1;       // Set height to 1 (canvas line drawing is not working)
+          ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Top := ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Top + ((x - 1) div 2) ; // bring the top to the center of the old panel
+                                                                                                                                                                               // so that the border appears to be approximately
+                                                                                                                                                                               // in the middle of the allocated space
+          ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Border.Color:=clGrayText; // adjust color and style
+          ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Border.Width:=1;
+          ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).Border.Style:=bboSolid;
+          ((currNode^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel).BorderBCStyle:=bpsBorder;
+
+        end;
+
+      end; //---------------------------------------------------------------------// This part would have sufficed to run once
+
+      //############# REFACTOR THIS PART #########################################
+      //## SEE if this can be modified to run ONLY ONCE ##########################
+
+    end
+    else //-----------------------------------------------------------------------// Otherwise if already visible :
+    begin
+      ( currNode^.subMenuContainer as TBCPanel).Visible := False; //--------------// TURN OFF
+      currNode^.isSubMenuDrawn := False; //---------------------------------------// Remove the flag
+      //----- TODO : IF CONSTANT REPARENTING CAUSED A PROBLEM, UNPARENT HERE -----//
+    end;
+  end;
+
+end; //###########################################################################// End of Function
+
+
+
+
+
+{ TODO : RFACTOR THIS subMenuItem_mouseEnter }
+procedure TAdvancedMainMenu.subMenuItem_mouseEnter(Sender: TObject);
+var
+  mPanel        : TBCPanel;
+  currNode      : TNodePtr;
+  parNode       : TNodePtr;
+  otherNode     : TNodePtr;
+  mustOpenCurr  : Boolean;
+
+  i             : Integer;
+  j             : Integer;
+begin
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName((Sender as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    (Sender as TBCPanel).Background.Color:= clBackground;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 1;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    (Sender as TBCPanel).Background.Color:= clInactiveCaption;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 1;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clInactiveCaption ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= (Sender as TBCPanel).Parent.Parent;
+    mPanel.Top  := (Sender as TBCPanel).Parent.Top  + (Sender as TBCPanel).Top;
+    mPanel.Left := (Sender as TBCPanel).Parent.Left + (Sender as TBCPanel).Width;
+    mPanel.Visible:= True;
+    currNode^.isSubMenuDrawn := True;
+    WriteLn( 'submenu is drawn for : ' + currNode^.name + ' ---> ' + BoolToStr(currNode^.isSubMenuDrawn));
+  end;
+
+
+
+  //----------------    Do not turn of parent highlight     ----------------------//
+
+  if (currNode^.Parent)^.Parent <> nil then  //-----------------------------------// Parent is a submenu itself
+  begin
+    parNode     := Nil;
+
+    for i := 0 to (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).Controls[i].Name <> (currNode^.Parent)^.name+'itemCont' ) then
+      begin
+        Continue;
+      end;
+
+      //--------------------------------------------------------------------------// If At this point, then found the parent Item
+                                                                                  // Keep it highlighted
+
+      //showMessage(   (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).Controls[i].Name );
+      mPanel    := (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel;
+
+      mPanel.Background.Color:= clInactiveCaption;
+      mPanel.Background.Style:= bbsColor;
+      mPanel.Border.Color    := clHighlight;
+      mPanel.Border.Style    := bboSolid;
+      mPanel.Border.Width    := 1;
+      mPanel.BorderBCStyle   := bpsBorder;
+      mPanel.Rounding.RoundX := 4;
+      mPanel.Rounding.RoundY := 4;
+
+      for j := 0 to mPanel.ControlCount - 1 do
+      begin
+        if ( mPanel.Controls[j] is TBCLabel ) then
+        begin
+          (mPanel.Controls[j] as TBCLabel).Background.Color:=clInactiveCaption ;
+          (mPanel.Controls[j] as TBCLabel).Background.Style:=bbsColor ;
+        end;
+      end;
+    end;
+
+  end;
+
+
+end; //###########################################################################// End of Function
+
+{ TODO : RFACTOR THIS mainMenuItem_mouseExit }
+procedure TAdvancedMainMenu.subMenuItem_mouseExit (Sender: TObject);
+var
+  mPanel        : TBCPanel;
+  currNode      : TNodePtr;
+  otherNode     : TNodePtr;
+  mustOpenCurr  : Boolean;
+
+  i             : Integer;
+begin
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName((Sender as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    (Sender as TBCPanel).Background.Color:= clBackground;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 1;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    (Sender as TBCPanel).Background.Color:= clBackground;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 0;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackground ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Visible:= False;
+    currNode^.isSubMenuDrawn := False;
+    WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+    WriteLn( 'submenu is removed for : ' + currNode^.name + ' ---> ' + BoolToStr(currNode^.isSubMenuDrawn));
+    WriteLn( 'submenu status for : ' + currNode^.name + ' ---> ' + BoolToStr(mPanel.Visible) + ', for ' + mPanel.Name);
+
+  end;
+
+  //------------------------------------------------------------------------------// At this point, turn off the parent as well.
+                                                                                  // because if it re-enters a sibling,
+                                                                                  // the parent will be highlighted as will
+                                                                                  // this way, we can account for cases
+                                                                                  // when the cursor fully exits the menu
+
+
+
+
+  //------------------- Close the sibling submenu panels as well -----------------//
+
+
+
+end; //###########################################################################// End of Function
+
+procedure TAdvancedMainMenu.subMenuChildItem_mouseEnter(Sender: TObject);
+var
+  mPanel        : TBCPanel;
+  currNode      : TNodePtr;
+  otherNode     : TNodePtr;
+  mustOpenCurr  : Boolean;
+
+  i             : Integer;
+begin
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName(((Sender as TBCLabel).Parent as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clInactiveCaption;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clInactiveCaption ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= ((Sender as TBCLabel).Parent as TBCPanel).Parent.Parent;
+    mPanel.Top  := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Top  + ((Sender as TBCLabel).Parent as TBCPanel).Top;
+    mPanel.Left := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Left + ((Sender as TBCLabel).Parent as TBCPanel).Width;
+    mPanel.Visible:= True;
+  end;
+
+end; //###########################################################################// End of Function
+
+procedure TAdvancedMainMenu.subMenuChildItem_mouseExit (Sender: TObject);
+var
+  mPanel        : TBCPanel;
+  currNode      : TNodePtr;
+  otherNode     : TNodePtr;
+  mustOpenCurr  : Boolean;
+
+  i             : Integer;
+begin
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName(((Sender as TBCLabel).Parent as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 0;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackground ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= ((Sender as TBCLabel).Parent as TBCPanel).Parent.Parent;
+    mPanel.Top  := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Top  + ((Sender as TBCLabel).Parent as TBCPanel).Top;
+    mPanel.Left := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Left + ((Sender as TBCLabel).Parent as TBCPanel).Width;
+    mPanel.Visible:= True;
+  end;
+
+end; //###########################################################################// End of Function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName((Sender as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    (Sender as TBCPanel).Background.Color:= clBackground;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 1;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    (Sender as TBCPanel).Background.Color:= clInactiveCaption;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 1;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clInactiveCaption ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= (Sender as TBCPanel).Parent.Parent;
+    mPanel.Top  := (Sender as TBCPanel).Parent.Top  + (Sender as TBCPanel).Top;
+    mPanel.Left := (Sender as TBCPanel).Parent.Left + (Sender as TBCPanel).Width;
+    mPanel.Visible:= True;
+    currNode^.isSubMenuDrawn := True;
+  end;
+
+
+
+  //----------------    Do not turn of parent highlight     ----------------------//
+
+  if (currNode^.Parent)^.Parent <> nil then  //-----------------------------------// Parent is a submenu itself
+  begin
+    parNode     := Nil;
+
+    for i := 0 to (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).Controls[i].Name <> (currNode^.Parent)^.name+'itemCont' ) then
+      begin
+        Continue;
+      end;
+
+      //--------------------------------------------------------------------------// If At this point, then found the parent Item
+                                                                                  // Keep it highlighted
+
+      //showMessage(   (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).Controls[i].Name );
+      mPanel    := (((currNode^.Parent)^.Parent)^.subMenuContainer as TBCPanel).Controls[i] as TBCPanel;
+
+      mPanel.Background.Color:= clInactiveCaption;
+      mPanel.Background.Style:= bbsColor;
+      mPanel.Border.Color    := clHighlight;
+      mPanel.Border.Style    := bboSolid;
+      mPanel.Border.Width    := 1;
+      mPanel.BorderBCStyle   := bpsBorder;
+      mPanel.Rounding.RoundX := 4;
+      mPanel.Rounding.RoundY := 4;
+
+      for j := 0 to mPanel.ControlCount - 1 do
+      begin
+        if ( mPanel.Controls[j] is TBCLabel ) then
+        begin
+          (mPanel.Controls[j] as TBCLabel).Background.Color:=clInactiveCaption ;
+          (mPanel.Controls[j] as TBCLabel).Background.Style:=bbsColor ;
+        end;
+      end;
+    end;
+
+  end;
+
+
+
+
+
+
+
+
+
+
+
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName((Sender as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    (Sender as TBCPanel).Background.Color:= clBackground;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 1;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    (Sender as TBCPanel).Background.Color:= clBackground;
+    (Sender as TBCPanel).Background.Style:= bbsColor;
+    (Sender as TBCPanel).Border.Color    := clHighlight;
+    (Sender as TBCPanel).Border.Style    := bboSolid;
+    (Sender as TBCPanel).Border.Width    := 0;
+    (Sender as TBCPanel).BorderBCStyle   := bpsBorder;
+    (Sender as TBCPanel).Rounding.RoundX := 4;
+    (Sender as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to (Sender as TBCPanel).ControlCount - 1 do
+    begin
+      if ( (Sender as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackground ;
+        ((Sender as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Visible:= False;
+    currNode^.isSubMenuDrawn := False;
+    WriteLn( locate_menuNode_byName('newMenu')^.name+ ' --> ' + BoolToStr(locate_menuNode_byName('newMenu')^.isSubMenuDrawn));
+    WriteLn( 'submenu is removed for : ' + currNode^.name + ' ---> ' + BoolToStr(currNode^.isSubMenuDrawn));
+    WriteLn( 'submenu status for : ' + currNode^.name + ' ---> ' + BoolToStr(mPanel.Visible) + ', for ' + mPanel.Name);
+
+  end; // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName(((Sender as TBCLabel).Parent as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  parNode       := currNode^.Parent; //-------------------------------------------// This will always be a parent
+
+
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clInactiveCaption;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clInactiveCaption ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= ((Sender as TBCLabel).Parent as TBCPanel).Parent.Parent;
+    mPanel.Top  := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Top  + ((Sender as TBCLabel).Parent as TBCPanel).Top;
+    mPanel.Left := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Left + ((Sender as TBCLabel).Parent as TBCPanel).Width;
+    mPanel.Visible:= True;
+    currNode^.isSubMenuDrawn:=True;
+  end;
+
+
+
+
+
+
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName(((Sender as TBCLabel).Parent as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 0;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackground ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= ((Sender as TBCLabel).Parent as TBCPanel).Parent.Parent;
+    mPanel.Top  := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Top  + ((Sender as TBCLabel).Parent as TBCPanel).Top;
+    mPanel.Left := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Left + ((Sender as TBCLabel).Parent as TBCPanel).Width;
+    // mPanel.Visible:= False;
+    // currNode^.isSubMenuDrawn:=False;
+  end;
+
+
+  //------------------------------------------------------------------------------// At this point, turn off the parent as well.
+                                                                                  // because if it re-enters a sibling,
+                                                                                  // the parent will be highlighted as will
+                                                                                  // this way, we can account for cases
+                                                                                  // when the cursor fully exits the menu
+
+
+
+
+  //------------------- Close the sibling submenu panels as well -----------------//
+
+
+
+
+
+           // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName(((Sender as TBCLabel).Parent as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  parNode       := currNode^.Parent; //-------------------------------------------// This will always be a parent
+
+
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clInactiveCaption;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clInactiveCaption ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= ((Sender as TBCLabel).Parent as TBCPanel).Parent.Parent;
+    mPanel.Top  := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Top  + ((Sender as TBCLabel).Parent as TBCPanel).Top;
+    mPanel.Left := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Left + ((Sender as TBCLabel).Parent as TBCPanel).Width;
+    mPanel.Visible:= True;
+    currNode^.isSubMenuDrawn:=True;
+  end;
+
+
+
+
+
+
+
+  // showMessage('touched panel: ' + (Sender as TBCPanel).Name);
+
+  currNode      := locate_menuNode_fromPanelName(((Sender as TBCLabel).Parent as TBCPanel).Name);
+
+  if (currNode = Nil) then
+  begin
+    Exit;
+  end;
+
+  if (currNode^.hasPanelHighLightColor) then
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 1;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackGround ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+  end
+  else
+  begin
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Color:= clBackground;
+    ((Sender as TBCLabel).Parent as TBCPanel).Background.Style:= bbsColor;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Color    := clHighlight;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Style    := bboSolid;
+    ((Sender as TBCLabel).Parent as TBCPanel).Border.Width    := 0;
+    ((Sender as TBCLabel).Parent as TBCPanel).BorderBCStyle   := bpsBorder;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundX := 4;
+    ((Sender as TBCLabel).Parent as TBCPanel).Rounding.RoundY := 4;
+
+    for i := 0 to ((Sender as TBCLabel).Parent as TBCPanel).ControlCount - 1 do
+    begin
+      if ( ((Sender as TBCLabel).Parent as TBCPanel).Controls[i] is TBCLabel ) then
+      begin
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Color:=clBackground ;
+        (((Sender as TBCLabel).Parent as TBCPanel).Controls[i] as TBCLabel).Background.Style:=bbsColor ;
+      end;
+    end;
+
+  end;
+
+  if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
+  begin
+    mPanel      := currNode^.subMenuContainer as TBCPanel;
+    mPanel.Parent:= ((Sender as TBCLabel).Parent as TBCPanel).Parent.Parent;
+    mPanel.Top  := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Top  + ((Sender as TBCLabel).Parent as TBCPanel).Top;
+    mPanel.Left := ((Sender as TBCLabel).Parent as TBCPanel).Parent.Left + ((Sender as TBCLabel).Parent as TBCPanel).Width;
+    // mPanel.Visible:= False;
+    // currNode^.isSubMenuDrawn:=False;
+  end;
+
+
+
+
+

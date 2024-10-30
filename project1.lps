@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default">
+      <Item Name="qt">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="project1"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Linking>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item>
+      <Item Name="qt_new">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <Target>
+            <Filename Value="project1"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Linking>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item>
+    </BuildModes>
+    <Units>
+      <Unit>
+        <Filename Value="project1.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <CursorPos Y="22"/>
+        <UsageCount Value="218"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit1.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="Unit1"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos Y="19"/>
+        <UsageCount Value="218"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="datatypes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="dataTypes"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="291"/>
+        <CursorPos X="7" Y="71"/>
+        <UsageCount Value="218"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="tadvancedmenu.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TAdvancedMenu"/>
+        <EditorIndex Value="4"/>
+        <CursorPos Y="16"/>
+        <UsageCount Value="218"/>
+        <Bookmarks Count="1">
+          <Item0 X="70" Y="853" ID="8"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/lib/lazarus/lcl/include/control.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2969"/>
+        <CursorPos Y="2989"/>
+        <UsageCount Value="48"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../menu_Object/unit1.lfm"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="15"/>
+        <UsageCount Value="4"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../monsoon/.lazarus/onlinepackagemanager/packages/bgracontrols-master/bcbasectrls.pas"/>
+        <UnitName Value="BCBaseCtrls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="402"/>
+        <CursorPos X="15" Y="422"/>
+        <UsageCount Value="2"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/lib/lazarus/lcl/include/wincontrol.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="6466"/>
+        <CursorPos Y="6492"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../fpcupdeluxe/ccr/bgracontrols-master/bgraspriteanimation.pas"/>
+        <UnitName Value="BGRASpriteAnimation"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="760"/>
+        <CursorPos Y="770"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../fpcupdeluxe/lazarus/lcl/graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="247"/>
+        <CursorPos X="11" Y="254"/>
+        <UsageCount Value="12"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../lazarus/lcl/graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="310"/>
+        <CursorPos X="5" Y="325"/>
+        <UsageCount Value="13"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../lazarus/lcl/extctrls.pp"/>
+        <UnitName Value="ExtCtrls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1173"/>
+        <CursorPos X="14" Y="1187"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../lazarus/lcl/controls.pp"/>
+        <UnitName Value="Controls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="211"/>
+        <CursorPos X="3" Y="226"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../fpcsrc/packages/rtl-objpas/src/inc/system.uiconsts.pp"/>
+        <UnitName Value="System.UIConsts"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="291"/>
+        <CursorPos X="21" Y="306"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../fpcsrc/packages/rtl-objpas/src/inc/system.uitypes.pp"/>
+        <UnitName Value="System.UITypes"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="221"/>
+        <CursorPos X="7" Y="227"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../lazarus/lcl/colorbox.pas"/>
+        <UnitName Value="ColorBox"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="336"/>
+        <CursorPos X="13" Y="361"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../lazarus/components/ideintf/menuintf.pas"/>
+        <UnitName Value="MenuIntf"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="361"/>
+        <CursorPos X="17" Y="376"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../lazarus/lcl/themes.pas"/>
+        <UnitName Value="Themes"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="505"/>
+        <CursorPos X="3" Y="57"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit1.lfm"/>
+        <HasResources Value="True"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="3" Y="29"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="25">
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="208" Column="8" TopLine="184"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="61" Column="15" TopLine="36"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="1223" Column="57" TopLine="1208"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="1236" Column="95" TopLine="1212"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="1480" Column="87" TopLine="1456"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="1493" Column="114" TopLine="1469"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="73" Column="50" TopLine="54"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="75" Column="50" TopLine="54"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="13" Column="55"/>
+      </Position>
+      <Position>
+        <Filename Value="../../lazarus/lcl/graphics.pp"/>
+        <Caret Line="325" Column="5" TopLine="310"/>
+      </Position>
+      <Position>
+        <Filename Value="../../lazarus/lcl/graphics.pp"/>
+        <Caret Line="2412" Column="15" TopLine="2397"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="122" Column="18"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="83" Column="15" TopLine="65"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="85" Column="59" TopLine="78"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="82" Column="54" TopLine="78"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="85" Column="55" TopLine="78"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="14" Column="7"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="272" Column="22" TopLine="257"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="1181" Column="61" TopLine="1167"/>
+      </Position>
+      <Position>
+        <Filename Value="tadvancedmenu.pas"/>
+        <Caret Line="1383" Column="53" TopLine="1369"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="9" TopLine="7"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="125" TopLine="6"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="11" Column="3"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="168"/>
+      </Position>
+      <Position>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="167"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>
