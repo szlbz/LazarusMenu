@@ -1,6 +1,7 @@
 # LazarusMenu
 
 What is going on : A new Lazarus Menu Widget to overcome limitations of the default Menu.
+原代码有很多Bug及使用了bgracontrols控件，我这个版本删除bgracontrols控件，修改后已可以正常使用。  
 
 ## Status
 WIP - Do *NOT* use in production.
@@ -79,5 +80,5 @@ Legends:
 - `x` -> Finished
 - ` ` -> planned  
 
-##在aarch64 for 银河麒麟运行截图：  
+## 在aarch64 for 银河麒麟运行截图：  
 ![image](https://github.com/user-attachments/assets/bc395d6d-9ea2-4c0d-89bb-5d068971b550)
