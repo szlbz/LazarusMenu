@@ -82,3 +82,6 @@ Legends:
 
 ## 在aarch64 for 银河麒麟运行截图：  
 ![image](https://github.com/user-attachments/assets/bc395d6d-9ea2-4c0d-89bb-5d068971b550)
+## 在windows 11运行截图：  
+![image](https://github.com/user-attachments/assets/f64d214b-8af2-4cd3-940a-0aa2ea04f6db)
+
