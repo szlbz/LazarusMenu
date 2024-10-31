@@ -1,5 +1,5 @@
 # LazarusMenu
-
+原始链接：https://github.com/naturalmechanics/LazarusMenu
 What is going on : A new Lazarus Menu Widget to overcome limitations of the default Menu.  
 原代码有很多Bug及使用了bgracontrols控件，我这个版本删除bgracontrols控件，修改后已可以正常使用。  
 
