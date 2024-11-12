@@ -9,16 +9,35 @@ object Form1: TForm1
   DesignTimePPI = 144
   Font.Height = -18
   OnCreate = FormCreate
+  object Panel1: TPanel
+    Left = 0
+    Height = 487
+    Top = 64
+    Width = 312
+    Align = alLeft
+    TabOrder = 0
+  end
   object Panel2: TPanel
     Left = 0
-    Height = 48
+    Height = 64
     Top = 0
-    Width = 1860
+    Width = 1188
+    Align = alTop
     BevelOuter = bvNone
     Color = clWindow
     ParentBackground = False
     ParentColor = False
-    TabOrder = 0
+    TabOrder = 1
+  end
+  object Panel3: TPanel
+    Left = 312
+    Height = 487
+    Top = 64
+    Width = 876
+    Align = alClient
+    BevelOuter = bvNone
+    Caption = 'Panel3'
+    TabOrder = 2
   end
   object ActionList1: TActionList
     Left = 552

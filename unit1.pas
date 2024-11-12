@@ -17,7 +17,9 @@ type
   TForm1 = class(TForm)
     Action1: TAction;
     ActionList1: TActionList;
+    Panel1: TPanel;
     Panel2: TPanel;
+    Panel3: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure FileClick(Sender: TObject);
     procedure quitApplication(Sender: TObject);
@@ -82,7 +84,11 @@ begin
   MainMenuItems := ['文件', 'Edit', 'View', '[Select Mode]', 'Tools', 'Help'];
   MainMenuNames := ['fileMenu', 'editMenu', 'viewMenu', 'selectMenu', 'toolMenu', 'helpMenu'];
   MainMenu      := TAdvancedMenu.TAdvancedMainMenu.Create();
+  MainMenu.MenuPosition:=TLeft;
+  MainMenu.MenuHeight:=60;
   MainMenu.create_mainMenu(MainMenuItems, MainMenuNames);
+  //mPanel        := Panel1;
+  //MainMenu.render(mPanel);
 
 
   FileMenuItems := ['新建', '打开', '保存', '导入', '导出', '打印', 'Send', 'Close', 'Quit'];
@@ -98,6 +104,9 @@ begin
   MainMenu.set_FGColor('helpMenu', TColor($88DDBB));
 
   mForm         := Form1;
+  //mPanel        := Panel2;
+  mPanel        := Panel1;
+  MainMenu.render(mPanel);
 
   MainMenu.add_mainMenuSubMenu_byName('fileMenu', FileMenuItems, FileMenuItemNames);  // SUBMENU ADDED BUT WILL NOT RENDER
   MainMenu.add_mainMenuSubMenu_byName('editMenu', EditMenuItems, EditMenuItemNames);  // SUBMENU ADDED BUT WILL NOT RENDER
@@ -140,10 +149,6 @@ begin
 
   MainMenu.assign_subMenuShortCut('blankDocumentMenu', blankDocumentMenuShortCut); 
   MainMenu.assign_subMenuShortCut('fromTemplateMenu' , fromTemplateMenuShortCut);
-
-
-  mPanel        := Panel2;
-  MainMenu.render(mPanel);
 
 
   qa            := @quitApplication;

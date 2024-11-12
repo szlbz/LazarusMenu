@@ -21,11 +21,13 @@ type
   TProc          = procedure(AParm: TObject) of object; //------------------------// also a procedure, but NOT a const param
 
   TNodePtr       = ^dataTypes.stringNodeStruct; //--------------------------------// Pointer to a menu struct
-
+  TMenuPosition  = (TTop,TLeft);
   { TAdvancedMainMenu }
 
   TAdvancedMainMenu = Class
   public
+    MenuHeight:integer;//
+    MenuPosition:TMenuPosition;
     MenuTree    : dataTypes.tree_ofStrings; //------------------------------------// Object tree
     MenuItemIDs : Array of Integer; //--------------------------------------------// IDs
     mainMenuRenderItems : Array of TPanel; //-----------------------------------// Panels used to render main Menu
@@ -99,6 +101,7 @@ implementation
 
 constructor TAdvancedMainMenu.Create;
 begin
+  MenuHeight:=60;
   //----------------------------   INITIALIZE VALUES    --------------------------//
   currentID     := 0;                                                             // SET ID COUNTER to ZERO.
                                                                                   // EVERY time a menu item (regardless main menu or submenu)
@@ -172,7 +175,8 @@ begin
   mPanel        := TPanel.Create(nil); //---------------------------------------// The main Panel (so that we can also add checkboxes and radios)
                                                                                 // ALTHOUGH the main menu should not contain any of that
   mPanel.Parent := nil;
-  mPanel.Top    := heightPadding  ; //--------------------------------------------// Constant padding on the top. this is not user controllable
+  if MenuPosition=TTop then
+    mPanel.Top    := heightPadding  ; //--------------------------------------------// Constant padding on the top. this is not user controllable
   //mPanel.Border.Style:=bboNone;
   mPanel.BevelOuter:=bvNone; //---------------------------------------------------// Otherwise, a border will be drawn
   mPanel.Name   := currNode^.name + 'panel'; //-----------------------------------// The name
@@ -184,7 +188,14 @@ begin
   end
   else
   begin
-    mPanel.Left := mainMenuRenderItems[length(mainMenuRenderItems) - 1].Left + mainMenuRenderItems[length(mainMenuRenderItems) - 1].Width + 0; // left = right of the last containing panel
+    if MenuPosition=TTop then
+      mPanel.Left := mainMenuRenderItems[length(mainMenuRenderItems) - 1].Left + mainMenuRenderItems[length(mainMenuRenderItems) - 1].Width + 0; // left = right of the last containing panel
+    if MenuPosition=TLeft then
+    begin
+      if MenuHeight<0 then MenuHeight:=60;
+      mPanel.Left:=0;
+      mPanel.Top:=ii* MenuHeight;
+    end;
   end;
 
   //-------------------    Create menuItem Display Label     ---------------------// TLabel
@@ -212,7 +223,14 @@ begin
   c := TBitmap.Create;
   c.Canvas.Font.Assign(Screen.SystemFont);
   mLabel.Width  := c.Canvas.TextWidth(mLabel.Caption) + 4; //---------------------// Label width
-  mPanel.Width  := mLabel.Width; //-----------------------------------------------// panel width set to be the same
+  if MenuPosition=TTop then
+    mPanel.Width  :=  mLabel.Width //-----------------------------------------------// panel width set to be the same
+  else
+  begin
+    mLabel.Width:= mPanel.Width;
+    mPanel.Height:=MenuHeight;
+    mLabel.Height:=MenuHeight;
+  end;
   c.Free;
 
   currNode^.BGColorOriginal:=MenuBackColor;//lbz clMenuBar;
@@ -543,10 +561,21 @@ var
 
   chldNode      : TNodePtr;
 begin
+  parent.Color:=MenuBackColor;
+  parent.BevelOuter:=bvNone;
   for i := 0 to length(MainMenuRenderItems) -1 do
   begin
     mPanel      := MainMenuRenderItems[i];  //------------------------------------// The current main menu item
-    mPanel.Height:=parent.Height;//lbz
+    if MenuPosition=TTop then
+      mPanel.Height:=parent.Height//lbz
+    else
+      mPanel.Height:=MenuHeight;
+    if MenuPosition=TLeft then
+    begin
+      mPanel.Width:=parent.Width;
+      (mPanel.Controls[0] as TLabel).Width:=parent.Width;
+      MainMenuRenderItems[i].Width:=parent.Width;
+    end;
     nm          :=  (mPanel.Controls[0] as TLabel).Name; //---------------------// Get the unique name that is associated with the label
     currNode    :=  locate_menuNode_byName(nm);
 
@@ -627,6 +656,7 @@ var
   lHeight       : Integer;
   padding       : Integer;
   maxWidth      : Integer;
+  p:TPoint;
 begin
   //-----------    Get the name of the origin and the origin itself      ---------//
   currNode      :=  nil;
@@ -662,8 +692,18 @@ begin
   mPanel.Name   := currNode^.name + 'submenuPanel'; //----------------------------// Categorically assigning a unique name, but keeping
   if ( ii_id <> -1) then   //-----------------------------------------------------// it was found in the main menu
   begin
-    mPanel.Left := MainMenuRenderItems[ii_id].Left;  //---------------------------// Set the left to be at the same place as the origin
-    mPanel.Top  := MainMenuRenderItems[ii_id].Top + MainMenuRenderItems[ii_id].Height;   // Same logic
+    if MenuPosition=TTop then
+    begin
+      mPanel.Left := MainMenuRenderItems[ii_id].Left;  //---------------------------// Set the left to be at the same place as the origin
+      mPanel.Top  := MainMenuRenderItems[ii_id].Top + MainMenuRenderItems[ii_id].Height;   // Same logic
+    end
+    else
+    begin
+      mPanel.Left := MainMenuRenderItems[ii_id].Width+1; // Set the left to be at the same place as the origin
+      p:=Point(MainMenuRenderItems[ii_id].Left,MainMenuRenderItems[ii_id].Top);
+      p:= MainMenuRenderItems[0].ClientToScreen(p);
+      mPanel.Top  :=p.Y+2;
+    end;
   end
   else
   begin
@@ -1587,9 +1627,6 @@ begin
   MenuItemIDs[length(MenuItemIds) - 1] := ii_id; //-------------------------------// Insewrt new item at the end, in the newly created space.
 end; //###########################################################################// End of Function
 
-
-
-
 function TAdvancedMainMenu.check_existingMainMenu: Integer;
 var
   res           : Integer; //-----------------------------------------------------// Track whether found
@@ -1601,10 +1638,6 @@ begin
   end;
   Result        := res; //--------------------------------------------------------// return via result keyword
 end; //###########################################################################// End of Function
-
-
-
-
 
 function TAdvancedMainMenu.locate_menuNode_byID(ii_id: Integer): TNodePtr; //-----// given an ID, do a DFS.
 var
@@ -1698,7 +1731,7 @@ begin
   end;
 
   Result        := mPanel;
-end; //###########################################################################// End of Function
+end;
 
 function TAdvancedMainMenu.locate_menuNode_fromPanelName(name: String ): TNodePtr;
 var
