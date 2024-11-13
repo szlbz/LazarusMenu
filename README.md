@@ -85,4 +85,9 @@ Legends:
 ![image](https://github.com/user-attachments/assets/bc395d6d-9ea2-4c0d-89bb-5d068971b550)
 ## 在windows 11运行截图：  
 ![image](https://github.com/user-attachments/assets/f64d214b-8af2-4cd3-940a-0aa2ea04f6db)
+新增加的左边栏菜单功能截图：
+![image](https://github.com/user-attachments/assets/6869bc44-d26c-4330-9459-ef3bb7c98fd4)
+![image](https://github.com/user-attachments/assets/c6df8227-8354-487a-983f-6d5188ac88a9)
+
+
 
