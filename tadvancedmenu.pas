@@ -7,13 +7,13 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Menus, StdCtrls, ExtCtrls,
   dataTypes;
-
+{
 const
-  MenuBackColor  = clWhite;//clSilver;//clWhite;           //menu背景颜色
+  MenuBackColor  = clWhite;           //menu背景颜色
   MenuItemTextColor  = clBlack;// menu文字颜色
   MenuHighlightColor =clInactiveCaption;// clMenuHighlight;//clInactiveCaption// clActiveCaption;   //激活时的颜色
   MenuItemHighlightTextColor = clBlack;       //激活时文字颜色
-
+}
 type
 
   TProcType      = procedure(const AParm: Integer) of object; //------------------// Method type
@@ -25,9 +25,10 @@ type
   { TAdvancedMainMenu }
 
   TAdvancedMainMenu = Class
-  public
-    MenuHeight:integer;//
-    MenuPosition:TMenuPosition;
+  private
+    ItemIndex:integer;
+    MenusubMenu : Array of Integer;
+    MenusubMenuName : Array of string;
     MenuTree    : dataTypes.tree_ofStrings; //------------------------------------// Object tree
     MenuItemIDs : Array of Integer; //--------------------------------------------// IDs
     mainMenuRenderItems : Array of TPanel; //-----------------------------------// Panels used to render main Menu
@@ -40,9 +41,6 @@ type
 
     has_somethingOpen : Boolean;
     mPanels     : Array of TPanel;
-
-    constructor Create();
-    procedure create_mainMenu (var mainMenuItems : Array of String; var mainMenuNames : Array of String); // supply the Main Menu item labels and names
     procedure update_mainMenu_renderItemList(ii: Integer);
     procedure update_mainMenu_actionList(ii: Integer);
 
@@ -50,14 +48,6 @@ type
     procedure mainMenuItem_mouseExit(Sender: TObject);
     procedure toggleSubMenu (Sender: TObject);
     procedure paintDivider(Sender : TObject);
-
-    procedure set_BGColor(nm: String; cl : TColor);
-    procedure set_FGColor(nm: String; cl : TColor);
-
-
-    procedure render(parent: TPanel);
-
-    procedure add_mainMenuSubMenu_byName(targetName: String; var items: array of String; var itemNames: array of String);
     procedure update_subMenu_renderItemList(nm: String);
     procedure update_subMenu_renderItemActionList(name : String);
 
@@ -65,21 +55,6 @@ type
     procedure subMenuItem_mouseExit (Sender: TObject);
     procedure subMenuChildItem_mouseEnter(Sender: TObject);
     procedure subMenuChildItem_mouseExit (Sender: TObject);
-
-    procedure add_subMenuCheckBox(name: String; state: Boolean);
-    procedure add_subMenuPicture(name: String; path: String);
-    procedure assign_subMenuShortCut(name : String; shortCut : String);
-
-
-
-    procedure add_subMenuSubMenu_byName(targetName: String; var items: array of String; var itemNames: array of String);
-    // procedure update_subSubMenu_renderItemList(nm: String);
-
-    procedure add_clickAction_byName(name: String; action: TProc);
-
-
-    procedure hello(Sender : TObject);
-
     function get_uniqueID() : Integer;
     function check_existingMainMenu() : Integer;
     procedure update_IDArray(ii_id : Integer);
@@ -89,9 +64,30 @@ type
     function locate_menuNode_byName(nm: String): TNodePtr;
     function locate_subMenuItemPanel_inParentsExtendedSubMenuPanel_byName(nm: String) : TNodePtr;
     function locate_subMenuPanel_byName(nm : String) : TPanel;
+  public
+    MenuHeight:integer;//
+    MenuPosition:TMenuPosition;
+    MenuBackGroundColor  :TColor;// clWhite;//clSilver;//clWhite;           //menu背景颜色
+    MenuItemTextColor  :TColor;// clBlack;// menu文字颜色
+    MenuHighlightColor :TColor;//clInactiveCaption;// clMenuHighlight;//clInactiveCaption// clActiveCaption;   //激活时的颜色
+    MenuItemHighlightTextColor :TColor;// clBlack;       //激活时文字颜色
+
+    constructor Create();
+    procedure create_mainMenu (var mainMenuItems : Array of String; var mainMenuNames : Array of String); // supply the Main Menu item labels and names
+
+    procedure set_BGColor(nm: String; cl : TColor);
+    procedure set_FGColor(nm: String; cl : TColor);
 
 
+    procedure render(parent: TPanel);
 
+    procedure add_mainMenuSubMenu_byName(targetName: String;var items: array of String;var itemNames: array of String);
+
+    procedure add_subMenuCheckBox(name: String; state: Boolean);
+    procedure add_subMenuPicture(name: String; path: String);
+    procedure assign_subMenuShortCut(name : String; shortCut : String);
+    procedure add_subMenuSubMenu_byName(targetName: String; var items: array of String; var itemNames: array of String);
+    procedure add_clickAction_byName(name: String; action: TProc);
   end;
   function locate_integerItem(needle: Integer; haystack : Array of Integer ) : Integer;
 
@@ -101,20 +97,19 @@ implementation
 
 constructor TAdvancedMainMenu.Create;
 begin
+  //menu背景颜色:
+  MenuBackGroundColor  := clWhite;//clSilver;//clWhite;
+  //menu文字颜色:
+  MenuItemTextColor  := clBlack;
+  //激活时的颜色:
+  MenuHighlightColor :=clInactiveCaption;// clMenuHighlight;//clInactiveCaption// clActiveCaption;
+  //激活时文字颜色:
+  MenuItemHighlightTextColor := clBlack;
+  //菜单item的高度:
   MenuHeight:=60;
   //----------------------------   INITIALIZE VALUES    --------------------------//
   currentID     := 0;                                                             // SET ID COUNTER to ZERO.
-                                                                                  // EVERY time a menu item (regardless main menu or submenu)
-                                                                                  // the counter will be incremented,guaranteeing an unique ID.
-                                                                                  // This id will be inserted to the newly created menu Object.
-                                                                                  // The Menu Object is also created with an unique name
-                                                                                  // (the programmer ensures that the name is unique),
-                                                                                  // So when referring to the Menu Object by name, we can
-                                                                                  // look up the unique ID.
-
-
   //----------------------------   INITIALIZE CONTAINERS  ------------------------//
-
   MenuTree      := Nil;                                                           // PROBABLY unnecessary.
   MenuTree      := dataTypes.tree_ofStrings.Create();                             // Create a new Menu Tree.
 
@@ -122,8 +117,6 @@ begin
   SetLength(mainMenuRenderItems, 0);                                              // PROBABLY unnecessary.
   SetLength(subMenuRenderItems, 0);                                               // PROBABLY unnecessary.
   SetLength(subsubMenuRenderItems, 0);                                            // PROBABLY unnecessary.
-
-
   //----------------------------   INITIALIZE DRAWING PARAMS ---------------------//
 
   heightPadding := 0;//lbz 8                                                             // These values are used.
@@ -145,9 +138,12 @@ begin
   begin
     Exit;
   end;
+  setlength(MenusubMenu,length(mainMenuItems));
+  setlength(MenusubMenuName,length(mainMenuItems));
   //------    Otherwise Loop over everything that is being inserted       --------//
   for ii := 0 to length(mainMenuItems) -1 do  // ---------------------------------// Loop over everything that is being inserted.
   begin
+    MenusubMenuName[ii]:=mainMenuNames[ii];
     ii_id       :=      get_uniqueID();  //---------------------------------------// Get new unique ID
                                                                                   // This automatically updates all the necessary the ID flags
     //-- Each string packed in a record, and appended to the doubly linked list --//
@@ -198,6 +194,7 @@ begin
     end;
   end;
 
+
   //-------------------    Create menuItem Display Label     ---------------------// TLabel
   mLabel        := TLabel.Create(mPanel); //------------------------------------// The label to contain the text of the menu item
   mLabel.Parent := mPanel;
@@ -209,9 +206,9 @@ begin
   //mLabel.Height := mLabel.Font.GetTextHeight('AyTg') + 4; //----------------------// Label height
   //mPanel.Height := mLabel.Height; //----------------------------------------------// Panel height same as label height
   mLabel.Font.Color:= clWindowText; //------------------------------------------// Font color
-  mLabel.Color:=MenuBackColor;///lbz .Background.Color  := clMenuBar;
+  mLabel.Color:=MenuBackGroundColor;///lbz .Background.Color  := clMenuBar;
   mLabel.Transparent:=true;//lbz
-  mPanel.Color  :=MenuBackColor;//clWhite;// clMenuBar;--lbz
+  mPanel.Color  :=MenuBackGroundColor;//clWhite;// clMenuBar;--lbz
   //mLabel.Top    := (mLabel.Height) div 2;
   //mLabel.Top := (mPanel.Height - mLabel.Height) div 2;
   //lbz
@@ -233,13 +230,12 @@ begin
   end;
   c.Free;
 
-  currNode^.BGColorOriginal:=MenuBackColor;//lbz clMenuBar;
+  currNode^.BGColorOriginal:=MenuBackGroundColor;//lbz clMenuBar;
 
   //-------------------    Insert menuItem container Panel   ---------------------// Insert to Array
 
   SetLength(MainMenuRenderItems, length(MainMenuRenderItems) +1);
   MainMenuRenderItems[length(MainMenuRenderItems) - 1] := mPanel;
-
 end;
 
 procedure TAdvancedMainMenu.update_mainMenu_actionList(ii: Integer);
@@ -263,7 +259,7 @@ begin
   procMClick    := @toggleSubMenu; //---------------------------------------------// ON MOUSE CLICK
   mLabel.OnClick:= procMClick; //-------------------------------------------------// do this
 
-end; //###########################################################################// End of Function
+end;
 
 procedure TAdvancedMainMenu.mainMenuItem_mouseEnter(Sender: TObject);
 var
@@ -278,36 +274,30 @@ var
   otherLabel    : TLabel;
   mPanel        : TPanel;
 begin
-
   //-------   Given the Sender (MainMenu TLabel) find the associated node ------// THIS APPLIES ONLY FOR THE MAIN MENU
   mPanel        := locate_renderItemPanel_byName((Sender as TLabel).Name); //---// Locate the container panel from mainmenu panel array
                                                                                   // The mainmenu panel array is global
   currNode      := locate_menuNode_byName((Sender as TLabel).Name); //----------// Get the Node that contains the menu
   //--------------------- Find the colors and other flags ------------------------//
   //-------------------------- Highlight the colors ------------------------------//
-  (Sender as TLabel).Transparent:=false; //lbz
+  //(Sender as TLabel).Transparent:=true; //lbz
   (Sender as TLabel).Color :=MenuHighlightColor;// clActiveCaption; //--------------------// Set the highlight color
   mPanel.Color:= MenuHighlightColor;//lbz
-  //(Sender as TLabel).Background.Style := bbsColor; //---------------------------// Otherwise color is not updated
+
   //------------- close submenus ONLY if enters another main menu  ---------------//
   otherNode     := MenuTree.root; //----------------------------------------------// Placeholder for all other nodes that we will check
-                                                                                  // If any other node has a open submenu,
-                                                                                  // then on mouseentry to this menu, the open submenu will be closed
-                                                                                  // and the current main menu submenu will be opened up.
-                                                                                  // Start searching at the main meni route.
   otherNode^.isSubMenuDrawn := False; //------------------------------------------// Update the relevant flags.
   (otherNode^.subMenuContainer as TPanel).Visible:=False; //--------------------// Close open menu. Generally, only one will be open
-
   if otherNode^.subMenuContainer <> Nil then
   begin
     for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
     begin
-      ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;// clBackground ;
+      ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;// clBackground ;
       for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
       begin
         if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
         begin
-          (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+          (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
         end;
       end;
     end;
@@ -325,9 +315,6 @@ begin
     begin
       otherNode := otherNode^.Children[0]; //-------------------------------------// Pick the child
       if otherNode^.isSubMenuDrawn then //----------------------------------------// Submenu container could be nil. but
-                                                                                  // If this flag is set,
-                                                                                  // then submenu container was created
-                                                                                  // And THUS Can't be nil
       begin
         (otherNode^.subMenuContainer as TPanel).Visible:=False; //--------------// Force off
         otherNode^.isSubMenuDrawn := False; //------------------------------------// Turn off flag
@@ -335,12 +322,12 @@ begin
         begin
           for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
           begin
-            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
             for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
             begin
               if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
               begin
-                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
               end;
             end;
           end;
@@ -355,11 +342,6 @@ begin
       Continue; //----------------------------------------------------------------// Continue to see if any other level of submenu is open
     end;
     //----------------------------------------------------------------------------// IF AT THIS POINT, THEN THERE'S NO CHILD
-                                                                                  // BUT POSSIBLY, CONTROL IS AT A DEEPER SUBMENU LEVEL,
-                                                                                  // WHERE A NON-ZERO INDEX CHILD WAS OPENED.
-                                                                                  // HOWEVER, THE DFS ABOVE SO FAR LOOKED AT THE
-                                                                                  // CHILD MENU INDEX 0 ONLY. SO SCAN OTHER INDICES ALSO
-
     if otherNode^.next <> Nil then  //--------------------------------------------// If there's a 'next' item, take it
     begin
       otherNode := otherNode^.next;
@@ -371,12 +353,12 @@ begin
         begin
           for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
           begin
-            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
             for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
             begin
               if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
               begin
-                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
               end;
             end;
           end;
@@ -412,12 +394,12 @@ begin
           begin
             for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
             begin
-              ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+              ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
               for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
               begin
                 if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
                 begin
-                  (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+                  (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
                 end;
               end;
             end;
@@ -428,9 +410,11 @@ begin
     end;
     Break; //---------------------------------------------------------------------// If nothing is possible, then break.
   end;
+
   //-------------------- if flag is set, open it ---------------------------------//
   if (has_somethingOpen) then //--------------------------------------------------// If need to open the current menu
   begin
+    toggleSubMenu(Sender); //lbz
     if (currNode^.subMenuContainer <> nil) then //--------------------------------// If there is a submenu in the first place
     begin
       (currNode^.subMenuContainer as TPanel).Parent  := (Sender as TLabel).Parent.Parent.Parent; // reparent
@@ -438,7 +422,6 @@ begin
       currNode^.isSubMenuDrawn:= True; //-----------------------------------------// Update flags
     end;
   end;
-
 end;
 
 procedure TAdvancedMainMenu.mainMenuItem_mouseExit(Sender: TObject);
@@ -489,10 +472,13 @@ begin
 
       for i := 0 to ( currNode^.subMenuContainer as TPanel).ControlCount - 1 do // Check if there is a divider line
       begin
+
         padding := 2;
+        //if currNode^.Children[i]^.stringVal = '-' then
         if (( currNode^.subMenuContainer as TPanel).Controls[i].Width = 0) then // If width is zero, then a divider line.
         begin
-          (currNode^.subMenuContainer as TPanel).Controls[i].Width:=( currNode^.subMenuContainer as TPanel).Width - 2*padding;
+          //(currNode^.subMenuContainer as TPanel).Controls[i].Width:=( currNode^.subMenuContainer as TPanel).Width - 2*padding;
+          (currNode^.subMenuContainer as TPanel).Controls[i].Width:=( currNode^.subMenuContainer as TPanel).Width ;//lbz
                                                 //--------------------------------// Outer container of all submenu items
                                                                                   // has got the proper width
                                                                                   // which is adjusted to the largest of submenu label
@@ -521,9 +507,9 @@ var
   targetPanel : TPanel;
 begin
   targetPanel := (Sender as TPanel);
-  targetPanel.Canvas.Pen.Color := clGrayText;
-  //targetPanel.Height           := 18;
-  targetPanel.Canvas.Line(0, targetPanel.Height div 2, targetPanel.Width, targetPanel.Height div 2);;
+  targetPanel.Canvas.Pen.Color := clSilver;//clGrayText;
+  targetPanel.Canvas.Pen.Width:=1;
+  targetPanel.Canvas.Line(4, targetPanel.Height div 2, targetPanel.Width-4, targetPanel.Height div 2);
 end;
 
 procedure TAdvancedMainMenu.set_BGColor(nm: String; cl: TColor); //---------------// Overwrite default BG Color of main menu
@@ -554,27 +540,40 @@ end;
 procedure TAdvancedMainMenu.render(parent: TPanel);
 var
   mPanel        : TPanel;
+  fgPanel       : TPanel;
   i             : Integer;
   j             : Integer;
   nm            : String;
   currNode      : TNodePtr;
 
-  chldNode      : TNodePtr;
 begin
-  parent.Color:=MenuBackColor;
+  if MenuPosition=TLeft then
+  begin
+    fgPanel:=TPanel.Create(nil);
+    fgPanel.Left:=parent.Left;
+    fgPanel.Width:=parent.Width-2;
+    fgPanel.Height:=parent.Height;
+    fgPanel.Color:=MenuBackGroundColor;
+    fgPanel.Parent:=parent.Parent;
+    fgPanel.BevelOuter:=bvNone;
+    parent.Color:=clSilver; //阴影颜色
+  end
+  else
+    parent.Color:=MenuBackGroundColor;
   parent.BevelOuter:=bvNone;
+  j:=0;
   for i := 0 to length(MainMenuRenderItems) -1 do
   begin
     mPanel      := MainMenuRenderItems[i];  //------------------------------------// The current main menu item
     if MenuPosition=TTop then
-      mPanel.Height:=parent.Height//lbz
+      mPanel.Height:=fgPanel.Height//lbz
     else
       mPanel.Height:=MenuHeight;
     if MenuPosition=TLeft then
     begin
-      mPanel.Width:=parent.Width;
-      (mPanel.Controls[0] as TLabel).Width:=parent.Width;
-      MainMenuRenderItems[i].Width:=parent.Width;
+      mPanel.Width:=fgPanel.Width;
+      (mPanel.Controls[0] as TLabel).Width:=fgPanel.Width;
+      MainMenuRenderItems[i].Width:=fgPanel.Width;
     end;
     nm          :=  (mPanel.Controls[0] as TLabel).Name; //---------------------// Get the unique name that is associated with the label
     currNode    :=  locate_menuNode_byName(nm);
@@ -583,13 +582,21 @@ begin
     begin
       Continue; //----------------------------------------------------------------// Thus continue with the next one
     end;
-    mPanel.Parent := parent; //---------------------------------------------------// Set the parent where it will be drawn
+    mPanel.Parent := fgPanel; //---------------------------------------------------// Set the parent where it will be drawn
+    if MenuPosition=TLeft then
+    begin
+      if MenusubMenu[i]>0 then
+      begin
+        mPanel.Alignment:=taRightJustify;
+        mPanel.Caption:='>  ';//'>'
+      end;
+    end;
   end;
 end;
 
 procedure TAdvancedMainMenu.add_mainMenuSubMenu_byName(targetName: String; var items: array of String; var itemNames: array of String);
 var
-  ii            : Integer;
+  ii ,i           : Integer;
   currNode      : ^dataTypes.stringNodeStruct;
   ii_id         : Integer;
 begin
@@ -601,6 +608,15 @@ begin
 
   if currNode = nil then Exit; //-------------------------------------------------// Did not Find it
 
+  //currNode^.haveSubMenu:=true;
+  for i:=0 to length(MenusubMenuName)-1 do
+  begin
+    if MenusubMenuName[i]=targetName then
+    begin
+        MenusubMenu[i]:=length(items);
+        break;
+    end;
+  end;
   for ii := 0 to length(items) -1 do
   begin
     ii_id       := get_uniqueID(); //---------------------------------------------// Again, use a functionin stead
@@ -632,24 +648,18 @@ var
   ii_id         : Integer;
   i             : Integer;
   j             : Integer;
-  k             : Integer;
 
   mPanel        : TPanel;
   cPanel        : TPanel;
   cPanels       : Array of TPanel;
 
   cLabel        : TLabel;
-  maxCLabelWidth: Integer;
   sLabel        : TLabel;
 
   cImage        : TImage;
-  cText         : TStaticText;
   cCheckBox     : TCheckBox;
 
   c             : TBitMap;
-  cl            : TColor;
-
-  willDrawDiv   : Boolean;
 
   ii            : Integer;
   tHeight       : Integer;
@@ -661,7 +671,6 @@ begin
   //-----------    Get the name of the origin and the origin itself      ---------//
   currNode      :=  nil;
   currNode      :=  locate_menuNode_byName(nm); //--------------------------------// The menu node corresponding to the sender found
-  willDrawDiv   := False;
   //--------------    Get the container of the click event sender    -------------//
   ii_id         := -1; //---------------------------------------------------------// Not found yet
   for ii := 0 to Length(MainMenuRenderItems) - 1 do //----------------------------// Loop over all the possible Items
@@ -688,7 +697,7 @@ begin
   //## THIS WILL CAUSE A PROBLEM, IF FORM HEIGHT IS SMALLER THAN SUBMENU PANEL #
 
   mPanel.Parent := Application.MainForm; //---------------------------------------// Same as above
-  mPanel.Color:=MenuBackColor;//lbz
+  mPanel.Color:=MenuBackGroundColor;//lbz
   mPanel.Name   := currNode^.name + 'submenuPanel'; //----------------------------// Categorically assigning a unique name, but keeping
   if ( ii_id <> -1) then   //-----------------------------------------------------// it was found in the main menu
   begin
@@ -718,21 +727,23 @@ begin
                                                                                   // Of the parent. This is precomputed anyways.
                                                                                   // Then match the top.
     mPanel.Parent := Application.MainForm; // This one often does not work.
-    willDrawDiv := True;
-    // showMessage('For menu item : ' + currNode^.name + ' fwill Draw: ' + BoolToStr(willDrawDiv));
   end;
-
-
-
 
   tHeight       := 0; //----------------------------------------------------------// Currently no height
   mPanel.Height :=  tHeight; //---------------------------------------------------// pretend no height
   lHeight       := 0; //----------------------------------------------------------// Last height : Has there been anything rendered before?
-  padding       := 2; //----------------------------------------------------------// Constant Padding
+  padding       := 0; //----------------------------------------------------------// Constant Padding
   maxWidth      := 150; //--------------------------------------------------------// minimum value of maximum width
   mPanel.Width  := maxWidth; //---------------------------------------------------// set initial Width of container panel
 
-  cl            := MenuBackColor; //lbz clBackground; //-----------------------------------------------// get initial color
+  //lbz+ 显示阴影
+  mPanel.Color:= clSilver; //阴影颜色
+  mPanel.Left:=mPanel.Left+2;
+  mPanel.Top:=mPanel.Top+2;
+  mPanel.Width:=mPanel.Width+2;
+  mPanel.Height:=mPanel.Height+2;
+  //lbz+
+
   //--------------------    Cycle through the Children      ----------------------//
   cPanels       := []; //---------------------------------------------------------// Save all child panels in this.
                                                                                   // Child container panel contains
@@ -749,22 +760,28 @@ begin
     cPanel.Parent:= mPanel; //----------------------------------------------------// we set the parent to be the new container panel
 
     cPanel.Left := 0 + padding; //------------------------------------------------// set left
-    cPanel.Top  := lHeight + padding; //------------------------------------------// top = height of all previous children + padding
+    cPanel.Top  := lHeight + padding;//lbz+ padding; //------------------------------------------// top = height of all previous children + padding
     cPanel.Height:= 40; //lbz--------------------------------------------------------// set current child height
-    cPanel.Color:= cl; //----------------------------------------------// Set color
+    cPanel.Color:= MenuBackGroundColor; //----------------------------------------------// Set color
     cPanel.Name := chldNode^.name+'itemCont'; //----------------------------------// Give them a Name anyways
     cPanel.Caption:=''; //--------------------------------------------------------// Dont show the name
     cPanel.BevelOuter:=bvNone; //-------------------------------------------------// Force no bevel
     cPanel.BevelWidth:=0; //------------------------------------------------------// Force 0 width
-
+    //lbz+
+    cPanel.Width:=cPanel.Width-2;
+    if i=length(currNode^.Children) - 1 then
+      cPanel.Top:=cPanel.Top-2;
+    cPanel.Left:=cPanel.Left-2;
+    //lbz+
     if (chldNode^.stringVal = '-') then //----------------------------------------// it is a DIVIDER
     begin
       cPanel.Width:=0; //---------------------------------------------------------// Force panel width to be zero
-      cPanel.Height:= 20;
+      cPanel.Height:= 20;//lbz
       cPanel.Color:=clSilver;//lbz
       lHeight     := cPanel.Top + cPanel.Height; //-------------------------------// Last Submenu item height
-      tHeight     := tHeight + cPanel.Height + padding; //------------------------// Total container height
+      tHeight     := tHeight + cPanel.Height;//lbz + padding; //------------------------// Total container height
       mPanel.Height:=2;//lbz tHeight ;  //------------------------------------------------// update container height itself
+
 
       if ( (cPanel.Width +2 * padding) > maxWidth) then //------------------------// If needed, update the width
       begin
@@ -791,8 +808,8 @@ begin
       //## SEE if this can be modified to take any width/height ##################
 
 
-      cCheckBox.Top:= (cPanel.Height - cCheckBox.Height) div 2; //----------------// Center vertically
-      cCheckBox.Color:=cl; //-----------------------------------------------------// Set color
+      cCheckBox.Top:= (cPanel.Height - cCheckBox.Height) div 2 ; //----------------// Center vertically
+      cCheckBox.Color:=MenuBackGroundColor; //-----------------------------------------------------// Set color
 
 
 
@@ -819,9 +836,10 @@ begin
 
       cImage    := TImage.Create(cPanel);  //-------------------------------------// Create Image. The image is just for show. No function added.
       cImage.Parent:= cPanel; //--------------------------------------------------// Same stuff as cCheckBox
-      cImage.Picture.LoadFromFile(chldNode^.picturePath);
-      cImage.Height:=20; //-------------------------------------------------------// setting width and height
-      cImage.Width:=20;
+      if FileExists(chldNode^.picturePath) then   //lbz
+        cImage.Picture.LoadFromFile(chldNode^.picturePath);
+      cImage.Height:=25;// 20; //-------------------------------------------------------// setting width and height
+      cImage.Width:=25; //20;
 
       //############# REFACTOR THIS PART #########################################
       //## SEE if this can be modified to take any width/height ##################
@@ -850,8 +868,7 @@ begin
     cLabel.Width:= c.Canvas.TextWidth(cLabel.Caption) + 4; //---------------------// Label width is really set here.
     c.Free;
 
-    cLabel.Color:= cl; //----------------------------------------------// Make sure that it is matching everything else
-    //cLabel.Background.Style:=bbsColor;
+    cLabel.Color:= MenuBackGroundColor; //----------------------------------------------// Make sure that it is matching everything else
 
     if (cPanel.Width < cLabel.Left + cLabel.Width + padding) then //--------------// If text label right edge is overflowing
     begin
@@ -863,17 +880,6 @@ begin
     cLabel.Layout:=tlCenter;
     cLabel.Height:=cPanel.Height;
     //lbz
-//    cLabel.Top  := cLabel.Height div 2;//lbz(cPanel.Height - cLabel.Height) div 2; //----------------------// Center
-
-
-    {
-    if willDrawDiv then
-    begin
-      showMessage(IntToStr(cPanel.Left) + ' ; ' + IntToStr(cPanel.Width) + ' ; ' +  IntToStr(cPanel.Top) + ' ; ' +  IntToStr(cPanel.Height) );
-      showMessage(chldNode^.name);
-    end;
-    }
-
     //----------------    Render the shortcut Text Label      --------------------//
                                                                                   // Tricks are same as above
     if (chldNode^.hasShortCut) then
@@ -912,12 +918,11 @@ begin
       sLabel.Layout:=tlCenter;
       sLabel.Height:=cPanel.Height;
       //lbz
-      //sLabel.Top  := sLabel.Height div 2;//lbz (cPanel.Height - sLabel.Height) div 2;
     end;
     //--------------    Update the variables with the loop     -------------------//
     lHeight     := cPanel.Top + cPanel.Height; //---------------------------------// Last Submenu item height
     tHeight     := tHeight + cPanel.Height + padding; //--------------------------// Total container height
-    mPanel.Height:=tHeight ;  //--------------------------------------------------// update container height itself
+    mPanel.Height:=tHeight;  //--------------------------------------------------// update container height itself
     if ( (cPanel.Width +2 * padding) > maxWidth) then //--------------------------// If needed, update the width
     begin
       maxWidth  := cPanel.Width +2 * padding;
@@ -931,15 +936,12 @@ begin
     mPanels[length(mPanels) - 1] := cPanel;
 
   end;
+
   //-------------    Draw the full submenu container correctly      --------------//
   mPanel.Height:=mPanel.Height + padding; //--------------------------------------// Increase height to add a bottom Margin
   mPanel.BevelOuter:=bvNone;
   mPanel.BevelWidth:=0;
-  //mPanel.Background.Color  := cl; //----------------------------------------------// Background color has set
-
   mPanel.Caption:= ''; //---------------------------------------------------------// Ensure we will not see a caption of the container
-
-
 
   for i := 0 to length(cPanels) - 1 do //-----------------------------------------// Width readjustment : loop again
   begin
@@ -959,29 +961,12 @@ begin
                                                                                   // of the shortcut label
       end;
     end;
-
   end;
 
-  //if not (willDrawDiv) then
-  //begin
   mPanel.Visible:= False; //------------------------------------------------------// NotVisible
   currNode^.isSubMenuDrawn:= False;
-  //end;
-
-  {
-  if willDrawDiv then
-  begin
-    mPanel.Visible:= True;
-    showMessage(BoolToStr(mPanel.Visible) + ' <--- visible');
-    mPanel.Parent := Application.MainForm;
-    mPanel.Background.Color:=clRed;
-    showMessage(IntToStr(mPanel.Left) + ' ; ' + IntToStr(mPanel.Width) + ' ; ' +  IntToStr(mPanel.Top) + ' ; ' +  IntToStr(mPanel.Height) );
-  end;
-  }
 
   currNode^.subMenuContainer:=mPanel; //------------------------------------------// Registered the open submenu container
-
-
 end;
 
 procedure TAdvancedMainMenu.update_subMenu_renderItemActionList(name: String);
@@ -996,28 +981,17 @@ var
   currNode      : TNodePtr;
   i             : Integer;
   j             : Integer;
-
-  c             : TColor;
 begin
-
   //-----------    Get the name of the origin and the origin itself      ---------//
-
   currNode      :=  nil;
   currNode      :=  locate_menuNode_byName(name); //------------------------------// The menu node corresponding to the sender found
-
-
   for i := 0 to (currNode^.subMenuContainer as TPanel).ControlCount - 1 do
   begin
-
-    procMEnter  := @subMenuItem_mouseEnter;
+     procMEnter  := @subMenuItem_mouseEnter;
     ((currNode^.subMenuContainer as TPanel).Controls[i] as TPanel).OnMouseEnter:=procMEnter;  // assign method to each child
                                                                                   // Which are bcpanels containing everything ...
-
-
     procMExit   := @subMenuItem_mouseExit;
     ((currNode^.subMenuContainer as TPanel).Controls[i] as TPanel).OnMouseLeave:=procMExit;
-
-
     for j := 0 to ((currNode^.subMenuContainer as TPanel).Controls[i] as TPanel).ControlCount - 1 do
     begin
       if not (((currNode^.subMenuContainer as TPanel).Controls[i] as TPanel).Controls[j] is TLabel) then
@@ -1028,10 +1002,7 @@ begin
       (((currNode^.subMenuContainer as TPanel).Controls[i] as TPanel).Controls[j] as TLabel).OnMouseEnter:= procCMEnter;
       (((currNode^.subMenuContainer as TPanel).Controls[i] as TPanel).Controls[j] as TLabel).OnMouseLeave:= @subMenuChildItem_mouseExit;
     end;
-
   end;
-
-
 end;
 
 procedure TAdvancedMainMenu.subMenuItem_mouseEnter(Sender: TObject);
@@ -1039,58 +1010,43 @@ var
   mPanel        : TPanel;
   parPanel      : TPanel;
   currNode      : TNodePtr;
-  parNode       : TNodePtr;
   otherNode     : TNodePtr;
-  mustOpenCurr  : Boolean;
 
   i             : Integer;
   j             : Integer;
   k             : Integer;
 begin
-
   //--------------------   Get the source and node      --------------------------//
-
   mPanel        := Sender as TPanel;
   currNode      := locate_menuNode_fromPanelName((Sender  as TPanel).Name);
-
   parPanel      := mPanel.Parent as TPanel; //----------------------------------// This is the LARGE submenu container
-
   //--------------------   Turn Off Sibling HighLights  --------------------------//
-
   for i := 0 to parPanel.ControlCount - 1 do
   begin
-
-    (parPanel.Controls[i] as TPanel).Color:=MenuBackColor;// clBackground;
-
+    (parPanel.Controls[i] as TPanel).Color:=MenuBackGroundColor;// clBackground;
     for j := 0 to (parPanel.Controls[i] as TPanel).ControlCount - 1 do
     begin
       if ( (parPanel.Controls[i] as TPanel).Controls[j] is TLabel ) then
       begin
-        ((parPanel.Controls[i] as TPanel).Controls[j] as TLabel).Color:=MenuBackColor;//clBackground ;
+        ((parPanel.Controls[i] as TPanel).Controls[j] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
       end;
     end;
-
-
-
   end;
-
   //--------------------   Turn off sibling submenu panels -----------------------//
-
   otherNode     := locate_menuNode_fromPanelName((parPanel.Controls[0] as TPanel).Name);
   if (otherNode^.isSubMenuDrawn) then
   begin
     mPanel        := otherNode^.subMenuContainer as TPanel;
     mPanel.Visible:= False;
     otherNode^.isSubMenuDrawn:=False;
-
     for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
     begin
-      ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+      ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
       for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
       begin
         if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
         begin
-          (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+          (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
         end;
       end;
     end;
@@ -1103,129 +1059,87 @@ begin
       otherNode := otherNode^.Children[0]; //-------------------------------------// Pick the child
 
       if otherNode^.isSubMenuDrawn then //----------------------------------------// Submenu container could be nil. but
-                                                                                  // If this flag is set,
-                                                                                  // then submenu container was created
-                                                                                  // And THUS Can't be nil
       begin
         (otherNode^.subMenuContainer as TPanel).Visible:=False; //--------------// Force off
         otherNode^.isSubMenuDrawn := False; //------------------------------------// Turn off flag
-
         for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
         begin
-          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
 
           for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
           begin
             if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
             begin
-              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
              end;
           end;
-
         end;
-
       end;
-
-
-      // ############### if needed turn off sibling highlight here
-
       Continue; //----------------------------------------------------------------// Continue to see if any other level of submenu is open
     end;
-
-    //----------------------------------------------------------------------------// IF AT THIS POINT, THEN THERE'S NO CHILD
-                                                                                  // BUT POSSIBLY, CONTROL IS AT A DEEPER SUBMENU LEVEL,
-                                                                                  // WHERE A NON-ZERO INDEX CHILD WAS OPENED.
-                                                                                  // HOWEVER, THE DFS ABOVE SO FAR LOOKED AT THE
-                                                                                  // CHILD MENU INDEX 0 ONLY. SO SCAN OTHER INDICES ALSO
-
     if otherNode^.next <> Nil then  //--------------------------------------------// If there's a 'next' item, take it
     begin
-
       otherNode := otherNode^.next;
-
       if otherNode^.isSubMenuDrawn then //----------------------------------------// again, if the flag is set = menu container is created
       begin
-
         (otherNode^.subMenuContainer as TPanel).Visible:=False; //--------------// Turn off
         otherNode^.isSubMenuDrawn := False;
-
         for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
         begin
-          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
           for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
           begin
             if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
             begin
-              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
 
             end;
           end;
-
         end;
        end;
       Continue;
     end;
-    //----------------------------------------------------------------------------// IF AT THIS POINT, THE DFS HAS LOOKED AT A LEVEL
-                                                                                  // WITHOUT A CHILD OR A NEXT
-                                                                                  // BUT MAY BE DFS FOLLOWED THE WRONG BRACH UNTIL NOW
-                                                                                  // SO GO ONE STEP BACK  AND TRY TO FIND THE NEXT BRANCH
-
     if otherNode^.Parent <> Nil then //-------------------------------------------// If possible
     begin
-
       otherNode := otherNode^.Parent; //------------------------------------------// Go one step back
       if otherNode^.next <> Nil then  //------------------------------------------// If possible
       begin
-
         otherNode := otherNode^.next; //------------------------------------------// Take next item
-
         if otherNode^.isSubMenuDrawn then
         begin
           (otherNode^.subMenuContainer as TPanel).Visible:=False;
           otherNode^.isSubMenuDrawn := False;
-
           for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
           begin
-            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
-
+            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
             for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
             begin
               if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
               begin
-                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
                end;
             end;
-
           end;
-
         end;
-
         Continue;
       end;
     end;
-
     Break; //---------------------------------------------------------------------// If nothing is possible, then break.
   end;
   //---- If there is a parent, which is a submenu itself then keep highlight  ----//
-
   //-----------------------        highlight itself        -----------------------//
 
-
-
-  (Sender as TPanel).Color:=MenuHighlightColor;//lbz clInactiveCaption;
-
+  //(Sender as TPanel).Color:=MenuHighlightColor;
   for i := 0 to (Sender as TPanel).ControlCount - 1 do
   begin
     if ( (Sender as TPanel).Controls[i] is TLabel ) then
     begin
+      (Sender as TPanel).Color:=MenuHighlightColor;//lbz 避免鼠标移到‘-’时出现背景色
       ((Sender as TPanel).Controls[i] as TLabel).Color:=MenuHighlightColor;//lbz clInactiveCaption ;
     end;
   end;
 
-
-
   //-----------------------     show submnu of itself      -----------------------//
-
   if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
   begin
     mPanel      := currNode^.subMenuContainer as TPanel;
@@ -1235,8 +1149,6 @@ begin
     mPanel.Visible:= True;
     currNode^.isSubMenuDrawn := True;
   end;
-
-
 end;
 
 procedure TAdvancedMainMenu.subMenuItem_mouseExit(Sender: TObject);
@@ -1249,7 +1161,6 @@ var
   i             : Integer;
 begin
 
-
 end;
 
 procedure TAdvancedMainMenu.subMenuChildItem_mouseEnter(Sender: TObject);
@@ -1257,101 +1168,71 @@ var
   mPanel        : TPanel;
   parPanel      : TPanel;
   currNode      : TNodePtr;
-  parNode       : TNodePtr;
   otherNode     : TNodePtr;
-  mustOpenCurr  : Boolean;
 
   i             : Integer;
   j             : Integer;
   k             : Integer;
 begin
-
   //--------------------   Get the source and node      --------------------------//
-
   mPanel        := (Sender as TLabel).Parent as TPanel;
   currNode      := locate_menuNode_fromPanelName(((Sender as TLabel).Parent  as TPanel).Name);
-
   parPanel      := mPanel.Parent as TPanel; //----------------------------------// This is the LARGE submenu container
-
   //--------------------   Turn Off Sibling HighLights  --------------------------//
-
   for i := 0 to parPanel.ControlCount - 1 do
   begin
-
-    (parPanel.Controls[i] as TPanel).Color:=MenuBackColor;// clBackground;
-
+    (parPanel.Controls[i] as TPanel).Color:=MenuBackGroundColor;// clBackground;
     for j := 0 to (parPanel.Controls[i] as TPanel).ControlCount - 1 do
     begin
       if ( (parPanel.Controls[i] as TPanel).Controls[j] is TLabel ) then
       begin
-        ((parPanel.Controls[i] as TPanel).Controls[j] as TLabel).Color:=MenuBackColor;//clBackground ;
+        ((parPanel.Controls[i] as TPanel).Controls[j] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
        end;
     end;
   end;
-
   //--------------------   Turn off sibling submenu panels -----------------------//
-
   otherNode     := locate_menuNode_fromPanelName((parPanel.Controls[0] as TPanel).Name);
   if (otherNode^.isSubMenuDrawn) then
   begin
     mPanel        := otherNode^.subMenuContainer as TPanel;
     mPanel.Visible:= False;
     otherNode^.isSubMenuDrawn:=False;
-
     for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
     begin
-      ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
-
+      ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
       for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
       begin
         if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
         begin
-          (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+          (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
         end;
       end;
-
     end;
   end;
-
   while(True) do
   begin
     if Length(otherNode^.Children)<> 0 then //------------------------------------// If has children
     begin
       otherNode := otherNode^.Children[0]; //-------------------------------------// Pick the child
       if otherNode^.isSubMenuDrawn then //----------------------------------------// Submenu container could be nil. but
-                                                                                  // If this flag is set,
-                                                                                  // then submenu container was created
-                                                                                  // And THUS Can't be nil
       begin
         (otherNode^.subMenuContainer as TPanel).Visible:=False; //--------------// Force off
         otherNode^.isSubMenuDrawn := False; //------------------------------------// Turn off flag
-
         for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
         begin
-          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
-
+          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
           for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
           begin
             if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
             begin
-              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
             end;
           end;
         end;
       end;
-
-
       // ############### if needed turn off sibling highlight here
-
       Continue; //----------------------------------------------------------------// Continue to see if any other level of submenu is open
     end;
-
-    //----------------------------------------------------------------------------// IF AT THIS POINT, THEN THERE'S NO CHILD
-                                                                                  // BUT POSSIBLY, CONTROL IS AT A DEEPER SUBMENU LEVEL,
-                                                                                  // WHERE A NON-ZERO INDEX CHILD WAS OPENED.
-                                                                                  // HOWEVER, THE DFS ABOVE SO FAR LOOKED AT THE
-                                                                                  // CHILD MENU INDEX 0 ONLY. SO SCAN OTHER INDICES ALSO
-
     if otherNode^.next <> Nil then  //--------------------------------------------// If there's a 'next' item, take it
     begin
       otherNode := otherNode^.next;
@@ -1362,51 +1243,37 @@ begin
 
         for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
         begin
-          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
+          ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
 
           for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
           begin
             if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
             begin
-              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+              (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
             end;
           end;
-
-
         end;
-
       end;
-
       Continue;
     end;
-    //----------------------------------------------------------------------------// IF AT THIS POINT, THE DFS HAS LOOKED AT A LEVEL
-                                                                                  // WITHOUT A CHILD OR A NEXT
-                                                                                  // BUT MAY BE DFS FOLLOWED THE WRONG BRACH UNTIL NOW
-                                                                                  // SO GO ONE STEP BACK  AND TRY TO FIND THE NEXT BRANCH
-
     if otherNode^.Parent <> Nil then //-------------------------------------------// If possible
     begin
-
       otherNode := otherNode^.Parent; //------------------------------------------// Go one step back
       if otherNode^.next <> Nil then  //------------------------------------------// If possible
       begin
-
         otherNode := otherNode^.next; //------------------------------------------// Take next item
-
         if otherNode^.isSubMenuDrawn then
         begin
           (otherNode^.subMenuContainer as TPanel).Visible:=False;
           otherNode^.isSubMenuDrawn := False;
-
           for j := 0 to (otherNode^.subMenuContainer as TPanel).ControlCount - 1 do
           begin
-            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackColor;//clBackground ;
-
+            ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Color:=MenuBackGroundColor;//clBackground ;
             for k := 0 to ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).ControlCount - 1 do
             begin
               if ((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] is TLabel then
               begin
-                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackColor;//clBackground ;
+                (((otherNode^.subMenuContainer as TPanel).Controls[j] as TPanel).Controls[k] as TLabel).Color:=MenuBackGroundColor;//clBackground ;
               end;
             end;
           end;
@@ -1414,14 +1281,11 @@ begin
         Continue;
       end;
     end;
-
     Break; //---------------------------------------------------------------------// If nothing is possible, then break.
   end;
   //---- If there is a parent, which is a submenu itself then keep highlight  ----//
-
   //-----------------------        highlight itself        -----------------------//
   ((Sender as TLabel).Parent as TPanel).Color:= MenuHighlightColor;//lbz clInactiveCaption;
-
   for i := 0 to ((Sender as TLabel).Parent as TPanel).ControlCount - 1 do
   begin
     if ( ((Sender as TLabel).Parent as TPanel).Controls[i] is TLabel ) then
@@ -1430,7 +1294,6 @@ begin
     end;
   end;
   //-----------------------     show submnu of itself      -----------------------//
-
   if ( Length(currNode^.Children) <> 0 ) and ( currNode^.subMenuContainer <> Nil ) then
   begin
     mPanel      := currNode^.subMenuContainer as TPanel;
@@ -1459,10 +1322,8 @@ var
 begin
   //--------------------   Locate the Menu Item by name       --------------------//
   currNode      := locate_menuNode_byName(name); //-------------------------------// We can use the function we wrote
-
   currNode^.hasCheckBox:=True; //-------------------------------------------------// add info to menu node
   currNode^.checkBoxStatus:=state;
-
   update_subMenu_renderItemList((currNode^.Parent)^.name);
   update_subMenu_renderItemActionList((currNode^.Parent)^.name);
 end;
@@ -1475,7 +1336,6 @@ begin
   currNode      := locate_menuNode_byName(name); //-------------------------------// We can use the function we wrote
   currNode^.hasPicture:=True;  //-------------------------------------------------// add info to menu node
   currNode^.picturePath:=path;
-
   update_subMenu_renderItemList((currNode^.Parent)^.name);
   update_subMenu_renderItemActionList((currNode^.Parent)^.name);
 end;
@@ -1490,7 +1350,6 @@ begin
   currNode^.hasShortCut:=True; //-------------------------------------------------// add info to menu node
   currNode^.shortCut:=shortCut;
   //----------------   Update the render items and actions       -----------------//
-
   update_subMenu_renderItemList((currNode^.Parent)^.name);
   update_subMenu_renderItemActionList((currNode^.Parent)^.name);
 end;
@@ -1500,7 +1359,6 @@ var
   ii            : Integer;
   currNode      : ^dataTypes.stringNodeStruct;
   ii_id         : Integer;
-
 begin
   //--------------------   Locate the Menu Item by name       --------------------//
   currNode      := locate_menuNode_byName(targetName); //-------------------------// We can use the function we wrote
@@ -1508,34 +1366,27 @@ begin
   for ii := 0 to length(items) -1 do
   begin
     ii_id       := get_uniqueID(); //---------------------------------------------// Again, use a function instead
-
     menuTree.AppendString_asSubSubNode_byName(targetName, items[ii], itemNames[ii], ii_id);
     //---------------------    Main ID list populated       ----------------------//
     update_IDArray(ii_id) ; //----------------------------------------------------// Append to Item ID
     //-----------------    Action Item list populated       ----------------------// Insert Default Actions
-
-    // update_RenderItemActionList(ii_id);
   end;
   //--------    Add the little arrow to show further submenu exists       --------//
   if ( length(currNode^.Children) <> 0) and (currNode^.hasShortCut = False) and (currNode^.Parent <> nil)  then
   begin
     currNode^.hasShortCut:=True;
-    currNode^.shortCut:= ' > ' ;
+    currNode^.shortCut:= '  >' ;//'>'
     update_subMenu_renderItemList((currNode^.Parent)^.name);
     update_subMenu_renderItemActionList((currNode^.Parent)^.name);
   end;
-
   //-----------------    Render Item list populated       ------------------------// Do it once for ALL The submenus
-
   update_subMenu_renderItemList(targetName);
   update_subMenu_renderItemActionList(targetName);
-
 end;
 
 procedure TAdvancedMainMenu.add_clickAction_byName(name: String; action: TProc);
 var
   mPanel        : TPanel;
-  mLabel        : TLabel;
   i             : Integer;
   j             : Integer;
   currNode      : TNodePtr;
@@ -1544,18 +1395,15 @@ begin
   currNode      := MenuTree.root;
   while( true) do
   begin
-
     if ( currNode^.name = name) then
     begin
       parNode   := currNode^.Parent;
       mPanel    := parNode^.subMenuContainer as TPanel;
-
       for i := 0 to mPanel.ControlCount - 1 do
       begin
         if ( mPanel.Controls[i] as TPanel).Name = name+ 'itemCont' then
         begin
            ( mPanel.Controls[i] as TPanel).OnClick:=action;
-
             for j := 0 to ( mPanel.Controls[i] as TPanel).ControlCount - 1 do
             begin
               if ( mPanel.Controls[i] as TPanel).Controls[j] is TLabel then
@@ -1563,10 +1411,8 @@ begin
                 ( ( mPanel.Controls[i] as TPanel).Controls[j] as TLabel).OnClick:= action;
               end;
             end;
-
         end;
       end;
-
     end;
 
     if Length( currNode^.Children ) <> 0 then
@@ -1590,42 +1436,22 @@ begin
         Continue;
       end;
     end;
-
     Break;
   end;
-
-
 end;
-
-procedure TAdvancedMainMenu.hello(Sender: TObject);
-begin
-  showMessage('helllllo');
-end;
-
-
 
 {{{{{ HELPER FUNCTIONS }}}}}
-
 function TAdvancedMainMenu.get_uniqueID: Integer;
 begin
   currentID    := currentID + 1; //-----------------------------------------------// increment current ID
   Result       := currentID - 1; //-----------------------------------------------// new id is one more than the current ID
-                                                                                  // We have to increment the current ID first, because
-                                                                                  // the last line of the function should contain
-                                                                                  // the special variable Result
-                                                                                  // -1. because we want to return the value that was
-                                                                                  // previously in it
-
-end; //###########################################################################// End of Function
-
-
-
+end;
 
 procedure TAdvancedMainMenu.update_IDArray(ii_id: Integer); //--------------------// Just insert in the ID array
 begin
   SetLength(MenuItemIDs, length(MenuItemIds)+1); //-------------------------------// Increase the container length by 1 : this creates one empty space at the end
   MenuItemIDs[length(MenuItemIds) - 1] := ii_id; //-------------------------------// Insewrt new item at the end, in the newly created space.
-end; //###########################################################################// End of Function
+end;
 
 function TAdvancedMainMenu.check_existingMainMenu: Integer;
 var
@@ -1637,55 +1463,36 @@ begin
     res         := 1; //----------------------------------------------------------// the menu tree must have created already
   end;
   Result        := res; //--------------------------------------------------------// return via result keyword
-end; //###########################################################################// End of Function
+end;
 
 function TAdvancedMainMenu.locate_menuNode_byID(ii_id: Integer): TNodePtr; //-----// given an ID, do a DFS.
 var
   currNode      : ^dataTypes.stringNodeStruct; //---------------------------------// Node under test
   resNode       : ^dataTypes.stringNodeStruct; //---------------------------------// Node to return
 begin
-
   currNode      :=  menuTree.root; //---------------------------------------------// Start at root
   resNode       :=  nil; //-------------------------------------------------------// Return value = Null
 
   while (True) do //--------------------------------------------------------------// Search indefinitely, unless break command
   begin
-
     if (currNode^.ID = ii_id) then //---------------------------------------------// id match
     begin
       resNode   := currNode; //---------------------------------------------------// Set Return value
       Break; //-------------------------------------------------------------------// break while loop
     end;
-
-
     //----------------------------------------------------------------------------// if at this point, then did not find a match
-
     if ( length(currNode^.Children) <> 0) then //---------------------------------// if there is a child, DFS: CAN GO DEEPER
     begin
       currNode  := currNode^.Children[0]; //--------------------------------------// DFS: GO DEEPER, take the child
       Continue; //----------------------------------------------------------------// and loop back
     end;
-
-
-
     //----------------------------------------------------------------------------// if at this point, then no child.
-                                                                                  // DFS can't go deeper here
-                                                                                  // Must take the horizontal nextnode
-
     if (currNode^.next <> nil) then //--------------------------------------------// if can take the next, DFS: Plan B: CAN MOVE HORIZONTALLY
     begin
       currNode  := currNode^.next; //---------------------------------------------// Move Horizontally, take the next
       Continue; //----------------------------------------------------------------// Loop back
     end;
-
-
     //----------------------------------------------------------------------------// if at this point, then no next either
-                                                                                  // DFS Can neighter go deeper, nor horizontal
-                                                                                  // DFS Can try to move back one level, and then
-                                                                                  // move horizontal.
-                                                                                  // All options of siblings and parent have been expended;
-                                                                                  // thus, try next sibling of parent.
-
     if (currNode^.Parent <> nil) then //------------------------------------------// If has a parent
     begin
       currNode  := currNode^.Parent; //-------------------------------------------// Take the parent
@@ -1696,20 +1503,10 @@ begin
         Continue; //--------------------------------------------------------------// Loop back
       end;
     end;
-
-
-
     //----------------------------------------------------------------------------// if at this point, then nothing worked
-
     Break; //---------------------------------------------------------------------// Break Loop
-
   end;
-
-
   Result        := resNode; //----------------------------------------------------// If loop search was successful,
-                                                                                  // resNode will contain the correct value
-                                                                                  // Otherwise, nil.
-
 end;
 
 function TAdvancedMainMenu.locate_renderItemPanel_byName(nm: String): TPanel;
@@ -1729,7 +1526,6 @@ begin
       Break;
     end;
   end;
-
   Result        := mPanel;
 end;
 
@@ -1765,22 +1561,16 @@ begin
       resNode   := currNode;                                                    // name found
       Break;                                                                      // break while loop
     end;
-                                                                                  // if at this point, then did not find a match
-
     if ( length(currNode^.Children) <> 0) then                                    // if there is a child
     begin
       currNode  := currNode^.Children[0];                                       // take the child and loop back
       Continue;
     end;
-                                                                                  // if at this point, then no child
-
     if (currNode^.next <> nil) then                                               // if can take the next, take the next
     begin
       currNode  := currNode^.next;
       Continue;
     end;
-                                                                                  // if at this point, then no next either
-
     if (currNode^.Parent <> nil) then
     begin
       currNode  := currNode^.Parent;
@@ -1790,9 +1580,7 @@ begin
         Continue;
       end;
     end;
-
     Break;
-
   end;
   Result := resNode;
 end;

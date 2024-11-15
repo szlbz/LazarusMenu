@@ -1,47 +1,50 @@
 object Form1: TForm1
   Left = 488
-  Height = 551
+  Height = 642
   Top = 95
-  Width = 1188
-  Caption = 'Form1'
-  ClientHeight = 551
-  ClientWidth = 1188
+  Width = 1144
+  Caption = '菜单Demo'
+  ClientHeight = 642
+  ClientWidth = 1144
   DesignTimePPI = 144
   Font.Height = -18
+  Position = poScreenCenter
   OnCreate = FormCreate
   object Panel1: TPanel
     Left = 0
-    Height = 487
-    Top = 64
+    Height = 608
+    Top = 0
     Width = 312
     Align = alLeft
     TabOrder = 0
-  end
-  object Panel2: TPanel
-    Left = 0
-    Height = 64
-    Top = 0
-    Width = 1188
-    Align = alTop
-    BevelOuter = bvNone
-    Color = clWindow
-    ParentBackground = False
-    ParentColor = False
-    TabOrder = 1
+    OnResize = Panel1Resize
   end
   object Panel3: TPanel
-    Left = 312
-    Height = 487
-    Top = 64
-    Width = 876
+    Left = 320
+    Height = 608
+    Top = 0
+    Width = 824
     Align = alClient
     BevelOuter = bvNone
-    Caption = 'Panel3'
-    TabOrder = 2
+    Caption = '菜单Demo'
+    TabOrder = 1
+  end
+  object Splitter1: TSplitter
+    Left = 312
+    Height = 608
+    Top = 0
+    Width = 8
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 34
+    Top = 608
+    Width = 1144
+    Panels = <>
   end
   object ActionList1: TActionList
-    Left = 552
-    Top = 264
+    Left = 840
+    Top = 184
     object Action1: TAction
       Caption = 'quit'
       ShortCut = 32883
