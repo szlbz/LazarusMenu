@@ -2,8 +2,8 @@
 
 What is going on : A new Lazarus Menu Widget to overcome limitations of the default Menu.  
 原代码有很多Bug及使用了bgracontrols控件，我这个版本删除bgracontrols控件，修改后已可以正常使用。  
-# 2024-11-15增加菜单阴影  
-# 2024-11-12增加左边栏菜单功能  
+* 2024-11-15增加菜单阴影  
+* 2024-11-12增加左边栏菜单功能  
 
 ## Status
 WIP - Do *NOT* use in production.
