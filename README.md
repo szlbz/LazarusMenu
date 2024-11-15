@@ -1,3 +1,5 @@
+## 我这版本是根据这个修改需来的：
+https://github.com/naturalmechanics/LazarusMenu
 # LazarusMenu
 
 What is going on : A new Lazarus Menu Widget to overcome limitations of the default Menu.  
