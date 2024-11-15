@@ -3,7 +3,7 @@ https://github.com/naturalmechanics/LazarusMenu
 # LazarusMenu
 
 What is going on : A new Lazarus Menu Widget to overcome limitations of the default Menu.  
-原代码有很多Bug及使用了bgracontrols控件，这个版本删除bgracontrols控件，及大量修改Bug后已可正常使用。  
+原代码有很多Bug及使用了bgracontrols控件，这个版本删除bgracontrols控件及修改大量的Bug后已可正常使用。  
 * 2024-11-15增加菜单阴影  
 * 2024-11-12增加左边栏菜单功能  
 
