@@ -2,7 +2,8 @@
 
 What is going on : A new Lazarus Menu Widget to overcome limitations of the default Menu.  
 原代码有很多Bug及使用了bgracontrols控件，我这个版本删除bgracontrols控件，修改后已可以正常使用。  
-2024-11-12增加左边栏菜单功能
+## 2024-11-15增加菜单阴影  
+## 2024-11-12增加左边栏菜单功能  
 
 ## Status
 WIP - Do *NOT* use in production.
@@ -89,7 +90,7 @@ Legends:
 ![image](https://github.com/user-attachments/assets/6869bc44-d26c-4330-9459-ef3bb7c98fd4)
 ## 新增加的左边栏菜单功能在aarch64 for 银河麒麟运行截图：
 ![image](https://github.com/user-attachments/assets/3c1d3a94-b10d-43dc-994c-837bded5b561)
-
+![image](https://github.com/user-attachments/assets/a5c765ff-45aa-4c53-bf69-90f2818abde2)
 
 
 
