@@ -1,4 +1,4 @@
-## 这版本是根据这个修改需来的：
+## LazarusMenu修改版的原始来源：
 https://github.com/naturalmechanics/LazarusMenu
 # LazarusMenu
 
